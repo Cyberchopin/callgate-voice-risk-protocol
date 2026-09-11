@@ -31,7 +31,7 @@ class LiveMetrics:
                 self._total = row[0] if row else 0
 
     def record(self, *, audio_ms, first_alert_proxy_ms, risk_engine_ms,
-               completed=None, outcome=None):
+               completed=None, outcome=None, provider_connect_ms=None, provider_first_transcript_ms=None):
         if outcome is None:
             if type(completed) is not bool:
                 raise ValueError('explicit outcome required')
@@ -51,6 +51,8 @@ class LiveMetrics:
             'audio_ms': number(audio_ms),
             'first_alert_proxy_ms': number(first_alert_proxy_ms, True),
             'risk_engine_ms': number(risk_engine_ms, True),
+            'provider_connect_ms': number(provider_connect_ms, True),
+            'provider_first_transcript_ms': number(provider_first_transcript_ms, True),
         }
         with self._lock:
             if self._database is not None:
@@ -97,6 +99,8 @@ class LiveMetrics:
                     'failure_rate': 'failed / (completed + failed); cancellations and disconnects excluded',
                     'alert_proxy': 'first emitted final risk transition; completed streams with valid timestamps only',
                     'risk_engine': 'maximum ingest duration per stream; percentiles are over these maxima',
+                    'provider_connect_ms': 'WebSocket connection setup elapsed, including network/TLS/upgrade',
+                    'provider_first_transcript_ms': 'first PCM send start to first nonempty normalized transcript; includes supplied audio duration, buffering and endpointing; NOT network RTT or isolated ASR inference time',
                     'percentiles': 'nearest-rank; descriptive development measurements, not an SLA',
                     'admission': 'authenticated streams with processing consent and configured ASR key',
                     'retention': 'last bounded window; no audio, transcript, capability or session ID'}}

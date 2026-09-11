@@ -163,7 +163,10 @@ if (role === 'participant') {
           const cost=m.estimated_asr_cost_usd === null ? '未配置 ASR 单价' : 'ASR 估算 $'+m.estimated_asr_cost_usd;
           el('metrics').textContent='已接收音频 '+(m.audio_received_ms/1000).toFixed(2)+' 秒；本地风险引擎 '+
             m.risk_engine_ms+' ms；提醒代理值 '+(m.end_of_speech_to_alert_proxy_ms === null ?
-            '暂无有效时间戳' : m.end_of_speech_to_alert_proxy_ms+' ms')+'；'+cost+'。';
+            '暂无有效时间戳' : m.end_of_speech_to_alert_proxy_ms+' ms')+
+            '；服务连接 '+(m.provider_connect_ms == null ? '未测量' : m.provider_connect_ms.toFixed(1)+' ms')+
+            '；首段转录等待 '+(m.provider_first_transcript_ms == null ? '未测量' : m.provider_first_transcript_ms.toFixed(1)+' ms')+
+            '（含说话与服务缓冲，非纯推理耗时）；'+cost+'。';
         }
         if (message.transcript) {
           s.turns.set(message.transcript.segment_id, message.transcript);

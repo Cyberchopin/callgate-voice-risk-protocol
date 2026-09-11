@@ -86,7 +86,7 @@ def test_audio_ingress_shares_the_confirmation_workflow(demo, monkeypatch):
     monkeypatch.setenv('ASSEMBLYAI_API_KEY', 'test-key')
     monkeypatch.setenv('CALLGATE_ASR_USD_PER_HOUR', '0.12')
 
-    async def provider(chunks, on_segment):
+    async def provider(chunks, on_segment, **kwargs):
         received = []
         async for chunk in chunks:
             received.append(chunk)
@@ -133,7 +133,7 @@ def test_audio_ingress_requires_participant_capability(demo):
 def test_server_stops_idle_provider_without_browser_cooperation(demo, monkeypatch, route, body):
     monkeypatch.setenv('ASSEMBLYAI_API_KEY', 'test-key')
     started, stopped = threading.Event(), threading.Event()
-    async def provider(chunks, on_segment):
+    async def provider(chunks, on_segment, **kwargs):
         started.set()
         try:
             await asyncio.Future()
@@ -166,7 +166,7 @@ def test_second_audio_connection_gets_a_fresh_segment_namespace(demo, monkeypatc
     monkeypatch.setenv('ASSEMBLYAI_API_KEY', 'test-key')
     texts = iter(['Send money right now.', 'Tell me your verification code.'])
 
-    async def provider(chunks, on_segment):
+    async def provider(chunks, on_segment, **kwargs):
         async for _ in chunks:
             pass
         await on_segment(Transcript(segment_id='aai-0', text=next(texts),

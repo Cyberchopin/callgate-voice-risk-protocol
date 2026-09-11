@@ -37,7 +37,12 @@ def test_transport_contract():
         return fake
     async def chunks(): yield b"\0" * 3200
     async def capture(s): seen.append(s)
-    asyncio.run(stream_pcm(chunks(), capture, connector=connector, api_key="test-only"))
+    timings = {}
+    ticks = iter([0, .02, .04, .12])
+    asyncio.run(stream_pcm(chunks(), capture, connector=connector, api_key="test-only",
+                           timings=timings, clock=lambda: next(ticks)))
+    assert timings['provider_connect_ms'] == pytest.approx(20)
+    assert timings['provider_first_transcript_ms'] == pytest.approx(80)
     assert seen[0].text == "Send money"
     assert json.loads(fake.sent[-1]) == {"type": "Terminate"}
 

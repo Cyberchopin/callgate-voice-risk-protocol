@@ -26,6 +26,13 @@
 
 ## API 与报告契约
 
+新增分段埋点：provider_connect_ms 为 WebSocket 连接建立耗时；
+provider_first_transcript_ms 为首次发送音频开始到首个有效转录的等待；
+本地 risk_engine_ms 单独记录。三项可通过实时消息查看，服务端结束记录
+自动持久化前两项；旧记录缺失字段表示未测量。首段等待包含说话、缓冲、
+网络和服务处理，不等于纯 ASR 推理时间或网络 RTT。模拟时钟已验证差值，
+真实设备测量和客户端显示耗时仍待完成。
+
 这些是本地实验接口，兼容性范围限于本仓库，全部要求 Participant bearer 凭据及现有 Host/Origin 检查：
 
 | 接口 | 版本/用途 |

@@ -211,6 +211,7 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
             asr_rate = configured_asr_rate()
             first_alert_proxy_ms = None
             risk_engine_samples = []
+            provider_timings = {}
             measurement_recorded = False
             ingress_prefix = secrets.token_hex(4)
 
@@ -252,6 +253,7 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
                     if observed >= 0:
                         proxy = round(observed, 1)
                 metrics = {
+                    **provider_timings,
                     'audio_received_ms': round(audio_ms, 1),
                     'server_elapsed_ms': round(elapsed_ms, 1),
                     'risk_engine_ms': round(risk_ms, 3),
@@ -269,12 +271,13 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
                 await ws.send_json({'transcript': segment.model_dump(), 'risk': result,
                                     'metrics': metrics})
 
-            provider_task = asyncio.create_task(stream_pcm(chunks(), on_segment))
+            provider_task = asyncio.create_task(stream_pcm(chunks(), on_segment, timings=provider_timings))
             active_audio.add(provider_task)
             await asyncio.wait_for(provider_task, timeout=90)
             live_metrics.record(completed=True, audio_ms=audio_bytes / 32,
                 first_alert_proxy_ms=first_alert_proxy_ms,
-                risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None)
+                risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None,
+                    **provider_timings)
             measurement_recorded = True
             await ws.send_json({'type': 'completed', 'session_metrics': {
                 'audio_received_ms': round(audio_bytes / 32, 1),
@@ -287,7 +290,8 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
             if 'started' in locals() and not measurement_recorded:
                 live_metrics.record(outcome='cancelled', audio_ms=audio_bytes / 32,
                     first_alert_proxy_ms=first_alert_proxy_ms,
-                    risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None)
+                    risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None,
+                    **provider_timings)
             try:
                 await ws.send_json({'error': 'processing_stopped'})
                 await ws.close(code=1000)
@@ -297,12 +301,14 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
             if 'started' in locals() and not measurement_recorded:
                 live_metrics.record(outcome='disconnected', audio_ms=audio_bytes / 32,
                     first_alert_proxy_ms=first_alert_proxy_ms,
-                    risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None)
+                    risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None,
+                    **provider_timings)
         except Exception:
             if 'started' in locals() and not measurement_recorded:
                 live_metrics.record(completed=False, audio_ms=audio_bytes / 32,
                     first_alert_proxy_ms=first_alert_proxy_ms,
-                    risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None)
+                    risk_engine_ms=max(risk_engine_samples) if risk_engine_samples else None,
+                    **provider_timings)
             try:
                 await ws.send_json({'error': 'audio_stream_failed',
                                     'protected_actions_allowed': False})

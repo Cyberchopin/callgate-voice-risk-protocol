@@ -2,6 +2,7 @@
 import asyncio
 import json
 import os
+import time
 from websockets.asyncio.client import connect
 from .models import Transcript
 
@@ -48,21 +49,27 @@ class AssemblyTurns:
 
 
 async def stream_pcm(chunks, on_segment, connector=connect, api_key=None, speaker_roles=None,
-                     drain_timeout=10):
+                     drain_timeout=10, timings=None, clock=time.perf_counter):
     """Stream 16kHz mono PCM16 chunks; bounded provider queues and 10s final drain."""
     key = api_key or os.environ.get("ASSEMBLYAI_API_KEY")
     if not key:
         raise ValueError("ASSEMBLYAI_API_KEY is required")
     url = "wss://streaming.assemblyai.com/v3/ws?sample_rate=16000&speech_model=universal-streaming-english&format_turns=true&speaker_labels=true&max_speakers=2"
     normalizer = AssemblyTurns(speaker_roles=speaker_roles)
+    timings = {} if timings is None else timings
+    connected_at = clock()
+    first_send_at = None
     async with connector(url, additional_headers={"Authorization": key}, max_queue=16,
                          open_timeout=10, close_timeout=3) as ws:
+        timings['provider_connect_ms'] = (clock() - connected_at) * 1000
         termination_requested = False
         async def send():
-            nonlocal termination_requested
+            nonlocal termination_requested, first_send_at
             async for chunk in chunks:
                 if not isinstance(chunk, bytes) or not 1600 <= len(chunk) <= 32000 or len(chunk) % 2:
                     raise ValueError("PCM chunks must contain 50-1000ms of mono 16kHz PCM16")
+                if first_send_at is None:
+                    first_send_at = clock()
                 await ws.send(chunk)
             termination_requested = True
             await ws.send(json.dumps({"type": "Terminate"}))
@@ -76,6 +83,8 @@ async def stream_pcm(chunks, on_segment, connector=connect, api_key=None, speake
                     raise RuntimeError("speech provider error")
                 segment = normalizer.normalize(message)
                 if segment:
+                    if first_send_at is not None and 'provider_first_transcript_ms' not in timings:
+                        timings['provider_first_transcript_ms'] = (clock() - first_send_at) * 1000
                     await on_segment(segment)
             raise RuntimeError("speech stream ended without termination")
 

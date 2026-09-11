@@ -55,7 +55,7 @@ def test_sensor_failure_preserves_audio(monkeypatch):
     monkeypatch.setenv('CALLGATE_VAD', 'silero')
     def fail(self, pcm): raise RuntimeError('private-error')
     monkeypatch.setattr(SileroSensor, 'feed', fail)
-    async def provider(chunks, on_segment):
+    async def provider(chunks, on_segment, **kwargs):
         assert [chunk async for chunk in chunks] == [bytes(3200), bytes(3200)]
     monkeypatch.setattr('callgate.api.stream_pcm', provider)
     with TestClient(app).websocket_connect('/v1/stream/audio') as ws:
