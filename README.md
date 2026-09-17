@@ -6,6 +6,8 @@ A local risk-evidence and two-person authorization protocol prototype for voice 
 
 ## Try the standalone sensor
 
+See **Current Status** below before interpreting the demo or evaluation results.
+
 Follow [本机运行与检查](START_HERE.md) for the existing environment, or [setup and API guide](docs/V2_PHASE1.md) for installation. With dependencies installed, run:
 
 ```powershell
@@ -27,6 +29,41 @@ These are expected baseline behaviors, not proof of scam detection accuracy. Rec
 - Scores are heuristic reference values, not fraud probabilities or verified identities.
 - The four implemented audio states are `UNVERIFIED`, `CHALLENGED`, `COOLING_OFF`, and `BLOCKED`. All provide advice; `BLOCKED` means a warning against sharing sensitive information, not an external action block.
 - NetworkX projects current evidence in the connected demo. The participant can inspect deduplicated rule contributions and download an Ed25519-signed risk receipt. SQLite replay protection remains a separately tested primitive; the demo uses an in-memory gate.
+
+## Current Status
+
+**Unvalidated, author-labeled synthetic pilot; not a production service or an LLM agent.**
+
+- Dataset: 60 synthetic pilot calls, split into 36 development and 24 initially held-out calls. The test subset contains 8 scam, 8 benign and 8 ambiguous calls; binary metrics use 16 calls. The proposed expansion to 600 new scenario families has not been performed.
+- Independent review: no reviewers confirmed and no completed outreach recorded. Planned owner-led outreach: UCLA/TASL peers by September 20, 2026, with eligible Crystar peers as fallback; confirmation deadline September 23. These are plans, not evidence of completed review.
+- Results: CallGate F1 **22.2%**, versus **30.8%** for the keyword baseline. CallGate detected 1 of 8 scam calls and falsely flagged 0 of 8 benign calls. The full report includes uncertainty intervals; this small synthetic result is not evidence of real-world superiority.
+- Ablations: three evaluation-only policy removals produced zero binary-metric delta; the pilot did not exercise the distinguishing credential-block, secrecy-cooling or revision-sensitive sticky behavior. This does not establish that those components are ineffective.
+- States: **four implemented** risk states: UNVERIFIED, CHALLENGED, COOLING_OFF, BLOCKED. This 24-call pilot observed only UNVERIFIED (23) and CHALLENGED (1). COOLING_OFF and BLOCKED have separate fixture tests; VERIFIED_BOUNDED and ESCALATED are earlier design concepts, not current Conversation states. No real-world state-coverage claim is made.
+- Judgment: risk extraction, scoring and state decisions are deterministic rules. AssemblyAI supplies transcription in the live demo; the text-only pilot invoked neither ASR nor an LLM.
+- Test exposure: the first test run is preserved and the set is now revealed. Subsequent changes on these cases cannot support final improvement claims.
+
+### Full evaluation disclosure
+
+This evaluation uses synthetic transcripts with provisional labels supplied by the same project assistant that authored the cases and had prior access to the CallGate implementation. Labels were not derived from CallGate predictions. No independent human annotation, adjudication, or inter-rater reliability study has been completed. A frozen holdout limits later tuning exposure but does not establish author independence or real-world validity.
+
+### Inspect and reproduce
+
+[Full pilot report, failure examples and figures](evaluation_v1/pilot_results/REPORT.md) · [Reproduction scope](evaluation_v1/README.md) · [Resume and interview claims](evaluation_v1/RESUME_AND_INTERVIEW.md)
+
+With the repository dependencies installed, run from the repository root:
+
+```powershell
+python -m pytest -q -p no:cacheprovider
+node --test tests/review_ui.test.cjs
+python -m evaluation_v1.evaluate_pilot render
+```
+
+The recorded local checks passed 184 Python tests and 3 Node logic tests. These
+are local checks, not a claim of a green remote CI run. Rendering uses committed
+first-run calls, labels, predictions and clock samples; it makes no API calls and
+does not rerun predictions. Fresh inference needs the original private inputs;
+details and exact recorded environment are linked above. Local text timings are
+not end-to-end speech latency; infrastructure cost remains unmeasured.
 
 ## Try the connected local protocol
 

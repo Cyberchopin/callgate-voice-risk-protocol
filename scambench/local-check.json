@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-11T03:27:21.357941+00:00",
+  "generated_at": "2026-09-17T05:38:22.159312+00:00",
   "scope": "local developer tests and synthetic demo; not real-world fraud accuracy",
   "python": "3.12.14",
   "source_sha256": {
@@ -49,9 +49,11 @@
     "tests/test_confirmation.py": "92baae1b215b7bec8e0a1671a5b87434da962220cfade590eca76ba30f5cda92",
     "tests/test_dataset.py": "93d732ec76e318d78cb063a0f356fc76dc8e25bea6f594cfa7c2a1233d11efd1",
     "tests/test_engine.py": "6fd560d54332e0ee710f9d920e5f5af9bfecdd7d677d427f1481fff5b6adb862",
+    "tests/test_evaluation_baseline.py": "c05d8c1d4853de9b23c1728621267be36243d83ba6ff549da5c45f6598e442ff",
     "tests/test_evidence_graph.py": "0ec97fd50e0b580b1423e4186f2dda5c775e49e8d324519f80aafa4254ff4c2d",
     "tests/test_integrations.py": "62c0a2ac8c8aaf43827b63a7fc0a688fb502f54113ba01523cc9512eaa85ac3a",
     "tests/test_live_metrics.py": "f32842dab3da3f1b30e81b07ec9a70e2d3ebdb6795670e4fb38236079d33d10e",
+    "tests/test_pilot_metrics.py": "0b88c5ff2f1fdd12d28e7c6c5d899d23508e48625c4dc72109415aaf438692dc",
     "tests/test_receipt.py": "cb4023c314b8c521eb93c98cf93e498f01936eff7d9f22360c136c314566f593",
     "tests/test_replay_store.py": "e45e21cec5300a83e34311a24d9ff221ae0b415fc0245f17aed9b5814a679086",
     "tests/test_review_artifacts.py": "7dabcc3a33fe748186b7b3669eff5460928c9e7af1fbcc35a96ce1e3d8b1c260",
@@ -185,7 +187,7 @@
       }
     },
     "state_passes": 25,
-    "engine_p95_ms": 0.1190000000406144,
+    "engine_p95_ms": 0.3286000001025968,
     "rows": [
       {
         "id": "benign-chat",
@@ -541,7 +543,7 @@
   },
   "tests": {
     "exit_code": 0,
-    "tests": 177,
+    "tests": 184,
     "failures": 0,
     "errors": 0,
     "skipped": 0
