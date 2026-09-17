@@ -1,113 +1,201 @@
+<div align="center">
+
 # CallGate
 
-A local risk-evidence and two-person authorization protocol prototype for voice requests to move money into a "safe account". It is not a production SDK.
+**Streaming speech. Traceable risk evidence. Scoped approval.**
 
-**Current boundary:** The local review demo connects consenting microphone input (or text fallback), streaming transcription, advisory risk policy, a two-person challenge step, and one simulated action. Real human identity enrollment, registered out-of-band contacts, multi-tenant isolation, remote trusted transport, key lifecycle/storage, latency SLA, and enforcement over real tools are not implemented. It cannot block a bank transfer or control a phone call.
+A local prototype for examining risky voice requests and authorizing a simulated action.
 
-## Try the standalone sensor
+[Quick start](#quick-start) · [Evaluation](#evaluation) · [Security boundaries](#security-boundaries) · [Documentation](#documentation)
 
-See **Current Status** below before interpreting the demo or evaluation results.
+<sub>Python · AssemblyAI · NetworkX · Ed25519 · SQLite · MIT</sub>
 
-Follow [本机运行与检查](START_HERE.md) for the existing environment, or [setup and API guide](docs/V2_PHASE1.md) for installation. With dependencies installed, run:
+</div>
 
-```powershell
-python scripts/start_demo.py
-```
-
-This older standalone page isolates the speech-to-risk sensor and does not enter the confirmation workflow. Open `http://127.0.0.1:8765/`, click Start, and allow microphone access. Streaming transcription requires an AssemblyAI key in the local `.env` and an internet connection. Use synthetic English speech:
-
-1. "Move your savings into the secure holding wallet." → `CHALLENGED`: verify before acting.
-2. "Do not tell anyone." → `COOLING_OFF`: pause and verify independently.
-
-These are expected baseline behaviors, not proof of scam detection accuracy. Recognition errors can change the result. Offline checks are available through `Check-CallGate.ps1` without a key or network access.
-
-## What runs today
-
-`Audio → AssemblyAI streaming transcript → English rule events → conversation state → score timeline → advisory Guardian`
-
-- Events reference transcript segments and revisions. Corrections replace current evidence.
-- Scores are heuristic reference values, not fraud probabilities or verified identities.
-- The four implemented audio states are `UNVERIFIED`, `CHALLENGED`, `COOLING_OFF`, and `BLOCKED`. All provide advice; `BLOCKED` means a warning against sharing sensitive information, not an external action block.
-- NetworkX projects current evidence in the connected demo. The participant can inspect deduplicated rule contributions and download an Ed25519-signed risk receipt. SQLite replay protection remains a separately tested primitive; the demo uses an in-memory gate.
+---
 
 ## Current Status
 
-**Unvalidated, author-labeled synthetic pilot; not a production service or an LLM agent.**
+**Research prototype · Author-labeled synthetic pilot · No independent validation**
 
-- Dataset: 60 synthetic pilot calls, split into 36 development and 24 initially held-out calls. The test subset contains 8 scam, 8 benign and 8 ambiguous calls; binary metrics use 16 calls. The proposed expansion to 600 new scenario families has not been performed.
-- Independent review: no reviewers confirmed and no completed outreach recorded. Planned owner-led outreach: UCLA/TASL peers by September 20, 2026, with eligible Crystar peers as fallback; confirmation deadline September 23. These are plans, not evidence of completed review.
-- Results: CallGate F1 **22.2%**, versus **30.8%** for the keyword baseline. CallGate detected 1 of 8 scam calls and falsely flagged 0 of 8 benign calls. The full report includes uncertainty intervals; this small synthetic result is not evidence of real-world superiority.
-- Ablations: three evaluation-only policy removals produced zero binary-metric delta; the pilot did not exercise the distinguishing credential-block, secrecy-cooling or revision-sensitive sticky behavior. This does not establish that those components are ineffective.
-- States: **four implemented** risk states: UNVERIFIED, CHALLENGED, COOLING_OFF, BLOCKED. This 24-call pilot observed only UNVERIFIED (23) and CHALLENGED (1). COOLING_OFF and BLOCKED have separate fixture tests; VERIFIED_BOUNDED and ESCALATED are earlier design concepts, not current Conversation states. No real-world state-coverage claim is made.
-- Judgment: risk extraction, scoring and state decisions are deterministic rules. AssemblyAI supplies transcription in the live demo; the text-only pilot invoked neither ASR nor an LLM.
-- Test exposure: the first test run is preserved and the set is now revealed. Subsequent changes on these cases cannot support final improvement claims.
+CallGate connects live transcription, a deterministic risk policy, evidence inspection, and a separate reviewer flow. It cannot control a phone call or block a real bank transfer. Risk decisions do not use an LLM.
 
-### Full evaluation disclosure
+| Area | Implemented today | Boundary |
+| :--- | :--- | :--- |
+| Speech | Streaming transcription and text fallback | English rules; ASR errors can change the result |
+| Risk policy | Four states, evidence revisions, deduplicated scoring | Heuristic scores, not fraud probabilities |
+| Approval | Scoped, expiring confirmation for one simulated action | Separate role credentials, not enrolled human identities |
+| Evidence | Source graph and signed risk receipts | Integrity does not establish judgment correctness |
+| Measurement | Local timing, provider timing proxies, bounded SQLite history | No end-to-end SLA or measured infrastructure cost |
+| Evaluation | Frozen first-run results, baseline, failure analysis, policy ablations | Small synthetic sample with provisional author labels |
+
+The pilot contains **60 calls: 36 development and 24 initially held out**. The test set has 8 scam, 8 benign and 8 ambiguous calls. It is now revealed and retired from final improvement claims. Expansion to **600 new scenario families is planned, not completed**.
+
+Independent reviewers are **not confirmed**; no completed outreach is recorded. The owner-led plan targets UCLA/TASL peers, with eligible Crystar peers as fallback: outreach by September 20, 2026, and two confirmations by September 23. These dates describe a plan, not completed review. See the [recruitment and scope conditions](evaluation_v1/STEP3_CONDITIONS.md).
+
+### Evaluation disclosure
 
 This evaluation uses synthetic transcripts with provisional labels supplied by the same project assistant that authored the cases and had prior access to the CallGate implementation. Labels were not derived from CallGate predictions. No independent human annotation, adjudication, or inter-rater reliability study has been completed. A frozen holdout limits later tuning exposure but does not establish author independence or real-world validity.
 
-### Inspect and reproduce
+## How it works
 
-[Full pilot report, failure examples and figures](evaluation_v1/pilot_results/REPORT.md) · [Reproduction scope](evaluation_v1/README.md) · [Resume and interview claims](evaluation_v1/RESUME_AND_INTERVIEW.md)
+```mermaid
+flowchart LR
+    A[Microphone] --> B[AssemblyAI transcript]
+    B --> D[Risk events and evidence]
+    C[Text fallback] --> D
+    D --> E[Four-state policy]
+    E --> F[Guardian advice]
+    D --> G[Evidence graph and signed receipt]
+    E --> H{Approval eligible?}
+    H -->|CHALLENGED| I[Scoped request and challenge]
+    I --> J[Separate reviewer approval]
+    J --> K[One simulated action]
+    H -->|Other states| L[No approval request]
+```
 
-With the repository dependencies installed, run from the repository root:
+Speech contributes evidence; it does not establish identity or grant authority. The trusted application supplies the proposed amount and destination. Transcript changes invalidate pending approval.
 
-```powershell
-python -m pytest -q -p no:cacheprovider
-node --test tests/review_ui.test.cjs
+| State | Meaning in the connected demo |
+| :--- | :--- |
+| `UNVERIFIED` | No qualifying high-impact request detected; identity remains unverified |
+| `CHALLENGED` | The user may request a scoped second confirmation |
+| `COOLING_OFF` | High-impact request plus secrecy pressure; approval is unavailable |
+| `BLOCKED` | Sensitive credential request; approval is unavailable |
+
+Only **UNVERIFIED (23)** and **CHALLENGED (1)** appeared in the 24-call pilot. COOLING_OFF and BLOCKED have separate fixture tests. VERIFIED_BOUNDED and ESCALATED are earlier design concepts, not implemented Conversation states. Neither BLOCKED nor COOLING_OFF hangs up a call.
+
+## Quick start
+
+Use **Python 3.12** for the recorded dependency set. Node.js is needed only for the frontend logic tests.
+
+```bash
+git clone https://github.com/Cyberchopin/CallGate_PreHackathon_Research.git
+cd CallGate_PreHackathon_Research
+python -m venv .venv
+```
+
+Activate the environment:
+
+| Platform | Command |
+| :--- | :--- |
+| Windows PowerShell | `./.venv/Scripts/Activate.ps1` |
+| macOS / Linux | `source .venv/bin/activate` |
+
+Install the dependencies and start the connected demo:
+
+```bash
+python -m pip install -r requirements-lock.txt -r requirements-verification.txt
+python -m scripts.start_review_demo
+```
+
+The launcher prints separate participant and reviewer entry links. Default ports are **8766** and **8767**, with fallback ports when occupied. Open the printed links and keep role credentials separate.
+
+**Text input works without an API key.** For microphone transcription, set `ASSEMBLYAI_API_KEY` in a local `.env` file. The key stays on the server; do not commit it. The current demo interface uses Chinese guidance with English test speech; this README is English, and the [Chinese local guide](START_HERE.md) is maintained separately.
+
+### Walk through a simulated approval
+
+1. In the participant view, consent to processing fictional test content.
+2. Submit “Move your savings into the secure holding wallet.” Stop recording before requesting confirmation.
+3. Review the fictional amount and destination, then generate a one-time challenge.
+4. Deliver the challenge through a separate agreed channel. In the reviewer view, check the request and approve or deny.
+5. Return to the participant view. A successful result explicitly states that only a simulated operation occurred.
+
+To test the refusal path, submit “Tell me your verification code.” The workflow should enter BLOCKED and invalidate pending approval. Start a new session to clear the current conversation and request fresh consent.
+
+<details>
+<summary><strong>Older standalone speech sensor</strong></summary>
+
+Run `python scripts/start_demo.py` and open `http://127.0.0.1:8765/`. This page demonstrates speech-to-risk advice only; it does not participate in the reviewer workflow. See the [setup and API guide](docs/V2_PHASE1.md).
+
+</details>
+
+## Evaluation
+
+The first-run result exposes a detection weakness rather than a performance advantage.
+
+| Metric | CallGate | Keyword baseline |
+| :--- | ---: | ---: |
+| Precision | 100.0% — 1 predicted positive | 40.0% |
+| Recall | 12.5% — 1 of 8 scam calls | 25.0% |
+| F1 | **22.2%** | **30.8%** |
+| False-positive rate | 0.0% — 0 of 8 benign calls | 37.5% |
+
+These metrics use **16 binary-labeled calls**. The other 8 are ambiguous and reported separately; both systems returned negative predictions for all 8. This is not evidence of successful ambiguity detection.
+
+Uncertainty is substantial: CallGate precision has a **95% interval of 20.7%–100%**, and recall **2.2%–47.1%**. Read the [full report](evaluation_v1/pilot_results/REPORT.md) for every interval, denominator and methodological limitation.
+
+Three evaluation-only policy removals produced zero binary-metric delta. The pilot did not exercise the distinguishing credential-block, secrecy-cooling or revision-sensitive sticky behavior. **Zero delta does not establish that those components are ineffective.**
+
+### Reproduce the saved result
+
+```bash
 python -m evaluation_v1.evaluate_pilot render
 ```
 
-The recorded local checks passed 184 Python tests and 3 Node logic tests. These
-are local checks, not a claim of a green remote CI run. Rendering uses committed
-first-run calls, labels, predictions and clock samples; it makes no API calls and
-does not rerun predictions. Fresh inference needs the original private inputs;
-details and exact recorded environment are linked above. Local text timings are
-not end-to-end speech latency; infrastructure cost remains unmeasured.
+This regenerates the report and figures from committed first-run calls, labels, predictions and clock measurements. It verifies the raw archive hash, makes no API calls and does not rerun predictions. Fresh inference has separate input requirements; see the [reproduction guide](evaluation_v1/README.md).
 
-## Try the connected local protocol
+[Full report](evaluation_v1/pilot_results/REPORT.md) · [Confusion matrix](evaluation_v1/pilot_results/confusion.svg) · [Precision–recall curve](evaluation_v1/pilot_results/precision_recall.svg) · [Latency histogram](evaluation_v1/pilot_results/latency_histogram.svg)
 
-Run `./Start-Review-Demo.ps1` in PowerShell, or `python -m scripts.start_review_demo` in the complete environment. The launcher prints two private entry links: participant on port 8766 and reviewer on 8767. The participant can use live AssemblyAI transcription or the offline text fallback; both feed the same risk and confirmation state. Nothing is installed by the launcher. Microphone use calls AssemblyAI; text fallback does not call a cloud service.
+### Run the checks
 
-1. Participant: explicitly allow processing of fictional test content, analyze the prefilled safe-account sentence, then submit the fictional amount and destination.
-2. The participant receives a six-digit one-time challenge and sends it through a separate demo channel.
-3. Reviewer: read the request, check the exact amount and destination, enter the challenge, then approve or deny.
-4. Participant: refresh the result. Approval permits one simulated action only. New transcript content or consent withdrawal invalidates pending confirmation; secrecy/credential states prevent a new request.
+```bash
+python -m pytest -q -p no:cacheprovider
+node --test tests/review_ui.test.cjs
+```
 
-Each role has a different bearer capability. Approval requires both the reviewer capability and the participant's one-time challenge; the reviewer API cannot read that challenge. Three wrong challenge attempts cancel the request. This is a minimal two-person control, not identity verification: no person or outside contact channel is enrolled, and the two users could collude or share both secrets. The reviewer private key is generated only inside the reviewer process; the participant backend receives its public key. Both processes and the host remain trusted.
+Recorded local checks: **184 Python tests and 3 Node logic tests passed**. These counts do not establish real-world accuracy or a green remote CI run. Check [GitHub Actions](https://github.com/Cyberchopin/CallGate_PreHackathon_Research/actions) for remote execution status.
 
-Keys and pending state are ephemeral; restart invalidates old entries. This launcher uses an in-memory replay gate and one session per startup. Tests exercise authenticated audio ingress, shared workflow state, real loopback HTTP across both processes, repeat approval rejection, and reviewer unavailability. Live provider accuracy and latency are not established by those mocked integration tests.
+## Security boundaries
 
-During a live run, the participant page shows received audio duration, local risk-engine time, and an observed end-of-speech-to-alert proxy. The proxy combines provider timestamps with the local server clock and is not an SLA measurement. Cost is shown only when `CALLGATE_ASR_USD_PER_HOUR` is set from the operator's current provider terms; otherwise it reports that the rate is unconfigured. The estimate covers ASR only. This path has no LLM, TTS, or SIP charge.
+- **Approval is scoped to a simulation.** No bank, payment provider or telephone control is connected.
+- **Role separation is not identity verification.** Someone controlling both entry credentials and the challenge can self-approve. Both processes and their host are trusted.
+- **Challenges are bounded.** Three incorrect responses cancel a request. Issuance is limited to five per minute and thirty per hour per workflow process; resets and consent changes do not clear that budget, but a process restart does.
+- **Keys and pending approvals are ephemeral.** The demo uses an in-memory replay gate. SQLite replay protection is a separately tested primitive; persistent issuer/reviewer key lifecycle management is not implemented.
+- **Receipts attest to signed content.** They do not prove correct risk judgment or human identity, and they are not operation permissions. Authorization replay rejection is a separate mechanism.
+- **Consent is a product control.** Withdrawal cancels local provider tasks; it does not delete data already sent to the speech provider or establish legal consent from every speaker.
 
-The page aggregates the latest 100 admitted streams and exports a versioned JSON measurement report. Completion, failure, intentional cancellation, and disconnect are counted separately. Failure rate uses only completed + failed streams; disconnect cause is unknown. Alert P50/P95 includes only completed streams with a new final risk transition and valid audio timestamps. Missing, negative, or out-of-range timing estimates remain unavailable. Per-stream engine timing is its maximum ingest time. The report contains numeric samples and fixed outcome labels, no audio, transcripts, challenge codes or session identifiers; the launcher automatically commits completed stream records to callgate-metrics.sqlite3 and restores the last 100 on restart. An unfinished stream can still be lost on process crash. The application factory defaults to memory unless metrics_database is supplied. Stop the service and remove the database to clear retained metrics. Downloaded files remain until the operator removes them.
+The local prototype has no production tenant isolation, registered out-of-band contacts, trusted remote deployment or enforcement over real tools. Do not expose the demo publicly.
 
-Use “查看风险依据” for evidence and “下载签名决策回执” for a signed current-risk snapshot. The receipt omits speech but retains a session ID; it is not an anonymous performance report or an action permission. Verify it offline with `python -m scripts.verify_receipt RECEIPT.json --public-key EXPECTED_HEX --session EXPECTED_SESSION`. The expected key must have been retained independently from the authenticated `GET /api/receipt-key` response; accepting a key bundled in an untrusted receipt proves no issuer identity. Receipt keys are disposable per broker startup, without rotation or revocation infrastructure.
+<details>
+<summary><strong>Receipt verification and measurement retention</strong></summary>
 
-Each microphone connection receives a fresh ingress namespace because provider turn numbers restart at zero. The participant page displays provider transcript text separately from the risk result, so a recognition error can be distinguished from an English-rule coverage gap. The supplied phrases are reproducible examples, not the only accepted audio; the current deterministic extractor deliberately recognizes a limited set of English risk expressions.
+Inspect the evidence graph and export a signed risk receipt from the participant view. Verify it against a public key retained independently from the authenticated receipt-key endpoint:
 
-## Reuse and project contribution
+```bash
+python -m scripts.verify_receipt RECEIPT.json --public-key EXPECTED_HEX --session EXPECTED_SESSION
+```
 
-AssemblyAI supplies streaming transcription; Silero and Pipecat integrations provide optional voice processing components; NetworkX, cryptography and SQLite supply graph, signature and persistence primitives. CallGate adds revision-aware evidence handling, cross-turn action/secrecy rules, advisory policy, and tests of scoped credentials and replay rejection.
+Accepting a public key bundled with an untrusted receipt does not establish the issuer. Receipts exclude transcript text but retain a session identifier and metadata; they are not anonymous.
 
-This is an integration prototype. Comparative superiority over other projects has not been established. See the [source comparison and reuse notes](docs/V2_RESEARCH.md) for research context.
+The launcher automatically saves the latest 100 ended-stream measurements in `callgate-metrics.sqlite3`. These records contain numeric timings and fixed outcome labels, not audio, transcript text, challenge codes or session IDs. An unfinished stream may be lost on process crash. Stop the service before removing the database to clear retained metrics. Exported files remain until their owner deletes them.
 
-## Evidence and next milestone
+Failure rate is `failed / (completed + failed)`; cancellations and disconnects are counted separately. Alert percentiles use completed streams with a newly emitted final risk transition and valid timing estimates. Engine measurements use each stream's maximum ingest duration.
 
-The [local report](scambench/LOCAL_RESULTS.md) records regression tests and 25 same-author synthetic development cases. This is an internal synthetic regression suite despite the legacy `scambench/` directory name; it is not an industry benchmark and does not estimate real-world accuracy. An independently authored, frozen evaluation dataset is still needed. Engine timings and scripted audio timestamps do not establish live speech-to-alert latency.
+Provider connection time, first-transcript wait and local engine time are distinct. First-transcript wait includes speaking, buffering and network time; it is not isolated ASR inference latency. If configured, `CALLGATE_ASR_USD_PER_HOUR` supplies an ASR-only cost estimate. Total infrastructure cost is unmeasured.
 
-Next: measure live alert latency, false interventions, and actual service cost on the connected path. Reviewer identity enrollment and production integration remain later milestones.
+</details>
 
-## Reference material
+## Documentation
 
-Consent withdrawal and scenario reset cancel active provider tasks on the broker, even if the browser does not disconnect. Audio callbacks are bound to a processing generation so late results cannot enter a newly consented scenario. The provider adapter bounds final draining to ten seconds and rejects unsolicited early termination. The broker admits one live stream at a time, limits it to 90 seconds, and rejects confirmation requests/decisions until audio processing finishes; the browser stops recording after 60 seconds. These controls do not delete data already sent to the provider or establish legal consent from every speaker.
+| Start here | Purpose |
+| :--- | :--- |
+| [Setup and API](docs/V2_PHASE1.md) | Local installation and interface details |
+| [Chinese local guide](START_HERE.md) | Chinese-language operator instructions |
+| [Evaluation guide](evaluation_v1/README.md) | Dataset scope, evidence and reproduction |
+| [Reviewer threat model](docs/REVIEWER_THREAT_MODEL.md) | Current trust assumptions and identity gaps |
+| [Demo and pitch](docs/DEMO_AND_PITCH.md) | A bounded demonstration script |
+| [Source comparison](docs/V2_RESEARCH.md) | Reuse decisions and research context |
+| [Interview evidence](evaluation_v1/RESUME_AND_INTERVIEW.md) | Claims tied to implementation and measurements |
+| [Build history](BUILD_LOG.md) | Earlier milestones and disclosure |
 
-- [Run and API details](docs/V2_PHASE1.md)
-- [Local results](scambench/LOCAL_RESULTS.md)
-- [Build history and disclosure](BUILD_LOG.md)
-- [Current delivery and mathematics/ZK boundaries](docs/DELIVERY_STATUS.md)
+The legacy `scambench/` folder contains internal regression material, not an independently validated industry benchmark. Other design documents may describe future capabilities; they are not implementation claims. Original research is preserved at commit `16c469ae78f22f06df757595b8b36edd9359086e`.
 
-The remaining documents in `docs/`, including architecture, threat model, product strategy and pitch plans, are design/reference material. Their future capabilities are not implementation claims. Original research is preserved at commit `16c469ae78f22f06df757595b8b36edd9359086e`.
+## Built with
+
+**AssemblyAI** for streaming transcription · **NetworkX** for evidence graphs · **cryptography / Ed25519** for signatures · **SQLite** for numeric measurement persistence. Silero and Pipecat are optional integration components.
+
+CallGate contributes revision-aware evidence handling, cross-turn risk rules, scoped simulated authorization and reproducible protocol tests. Comparative superiority over other projects has not been established.
 
 ## License
 
