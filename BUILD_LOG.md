@@ -38,3 +38,70 @@ The user subsequently reported successful microphone transcripts for the money+s
 ## Context regression update
 
 Extractor rules-en-v3 narrowly recognizes explicit hypothetical scammer examples within one sentence. Contrast and sentence boundaries preserve subsequent action requests; quotes alone do not suppress detection. Responses expose educational_context_heuristic uncertainty and never authorize an action. Eight paired boundary tests added; full suite 47 passed. Original unchanged 12-case development corpus now 12/12 (results-v3.json). This is same-author development validation, not held-out accuracy. Broader paraphrases, punctuation-free speech and genuine semantic attribution remain open.
+
+## Final-product local increment — 2026-10-05 America/Los_Angeles
+
+User requested immediate final-product development rather than research-only preparation. This work was built now, not during a future event. No external PR, push, deployment or message was made.
+
+Baseline inspected: `e72e85a22a6ec0ef19f0a9ee07b4093eb8af7753`. `git log -10 --oneline` read before changes. `docs/PROJECT_TRUTH.md` and FEATURE_LEDGER did not exist in this snapshot; created with explicit seed verification. Prior assistant ZIP-only assessment was stale.
+
+### Implemented
+
+- Bounded bilingual text extractor in new `callgate/safety_policy.py`; archived English `engine.py` unchanged.
+- Live ratchet: historical safety categories and risk restrictions cannot weaken under revision, order changes or duplicate segments. Current evidence remains revision-aware.
+- Connected reviewer workflow uses the new live policy; Chinese/mixed text selector exposed in participant UI. Mandarin streaming ASR is not claimed validated.
+- Direct simulator operation endpoint returns HTTP 403 / `POLICY_PROOF_REQUIRED` without granting any action.
+- Reviewer denial, expired pending confirmation or exhausted guesses latches authorization refusal for the session. Amount/destination changes cannot bypass it. Explicit new-session reset remains a demo boundary, not production identity enforcement.
+- Offline counterfactual-plus-valid-approval rehearsal; generated local keys explicitly not independent human verification.
+- PROJECT_TRUTH, CLAIMS, frozen-evidence hashes, claims CI gate, prospective blind inputs, story/privacy/runbook assets.
+
+### Test-first evidence
+
+New claims tests initially: 5 failed (checker absent), then passed after implementation.
+New bilingual/ratchet fixtures initially: 10 failed (module absent), then passed.
+Denial retry and direct-action tests initially: 2 failed (retry allowed / route missing), then passed.
+Denial scope-change and expiry tests initially: 2 failed (new authorization allowed), then passed.
+The old pending-capacity regression explicitly creates new consented sessions after timeout now; it no longer treats silent renewal of an expired session as desired behavior.
+
+### Commands and actual outputs
+
+Environment: isolated Python environment; installed repository core and verification locks and `requirements-safety.txt`. Optional Pipecat/Silero packages not installed. No provider credentials used.
+
+- Original suite: `python -m pytest -q -p no:cacheprovider`: 181 passed / 184 collected, 3 skipped; not a reproduction of all historical 184 passes.
+- Final suite: `python -m pytest -q -p no:cacheprovider --junitxml=...`: 206 passed / 209 collected, 3 skipped, 0 failures, 0 errors; 2 deprecation warnings.
+- `node --test tests/review_ui.test.cjs`: 3 passed / 3 tests, 0 failures.
+- `node --check callgate/demo/review-ui.js`: exit zero.
+- Property test with `--hypothesis-show-statistics`: 1000 passing / 1000 valid generated examples, 0 failing; 83 invalid generation cases discarded. This is not 1000 independent real calls.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0. Initial pending bindings failed closed before they were bound. README performance values were not changed to make them pass.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts, 30 correlated scenario families; English/Mandarin/mixed each 30; 10 slices each 9. No CallGate predictions run on these inputs.
+- `python -m scripts.proof_demo`: forced empty detector yielded UNVERIFIED but direct action returned actual HTTP 403 with `POLICY_PROOF_REQUIRED`; fresh valid signed simulation completed. Generated reviewer key, no real financial action.
+- `python -m evaluation_v1.evaluate_pilot render`: exit zero; frozen CallGate recall 1/8 and baseline recall 2/8 unchanged. Renderer-only line-ending changes restored to original CRLF after whitespace-insensitive diff confirmed equal content.
+- `git diff --check`: no whitespace errors.
+
+Raw archive SHA-256 remains `32155007486e09295ffb05f3f0081a36b4133e3146e5da4e017e98581f4722dd`. Label/freeze/archive hashes are separately pinned in `docs/immutable-evidence.json`. No v1 labels, first-run predictions or raw archive hashes were modified.
+
+### Still incomplete
+
+- Independently enrolled claimed-identity-bound contacts and remote dual-device delivery; current role separation does not prevent one person controlling both roles.
+- Production tool integration, issuer/contact revocation, trusted HTTPS deployment, data TTL guarantees.
+- Independent annotations; population-level legitimate-request utility and warning coverage of new live rules.
+- Real Mandarin streaming verification; surgical audio generation and measured ASR perturbations.
+- Four-baseline joint safety/utility study with intervals and latency; cannot report it before actual runs and reviewed labels.
+- Browser visual QA and prerecorded offline video on the user's devices.
+
+Next work must start from the current checked-out code and this log, not the September research ZIP. Do not call this increment an award-ready complete deployment.
+
+## 2026-10-06 — PR preparation requested by owner
+
+Owner authorized publishing yesterday's local increment as a branch and pull request. GitHub repository metadata resolves the former repository name to `Cyberchopin/callgate-voice-risk-protocol`; remote main remains `e72e85a22a6ec0ef19f0a9ee07b4093eb8af7753`.
+
+Recreated the missing virtual-environment interpreter and reran checks against the preserved code:
+- `python -m pytest -q -p no:cacheprovider`: 206 passed / 209 collected, 3 skipped, 2 deprecation warnings.
+- `node --test tests/review_ui.test.cjs`: 3 passed / 3 tests; JavaScript syntax check passed.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts / 30 correlated families; independent annotation pending, no predictions run.
+- `python -m scripts.proof_demo`: direct action returned 403 POLICY_PROOF_REQUIRED with detector forced empty; separately signed simulated approval completed; no real action.
+- `python -m callgate.bench`: 25 / 25 development state fixtures passed; this is the existing English development smoke corpus, not a new accuracy study.
+- `git diff --check`: passed.
+
+The incomplete items above remain unchanged. This entry records local checks, not remote CI results or a merged PR.

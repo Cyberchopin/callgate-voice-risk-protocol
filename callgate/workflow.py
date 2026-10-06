@@ -8,6 +8,7 @@ import math
 from collections import deque
 
 from .engine import Conversation, WEIGHTS
+from .safety_policy import SafetyConversation
 from .evidence_graph import evidence_graph
 from .receipt import issue_receipt, current_evidence
 
@@ -23,7 +24,7 @@ class DemoWorkflow:
         self._coordinator = coordinator
         self._gate = gate
         self._reviewer = reviewer
-        self._conversation = Conversation()
+        self._conversation = SafetyConversation()
         self._session = secrets.token_hex(16)
         self._pending = None
         self._outcome = None
@@ -32,9 +33,13 @@ class DemoWorkflow:
         self._lock = threading.Lock()
         self._request_clock = request_clock
         self._issued = deque()
+        self._denied_resources = set()
+        self._authorization_denied = False
 
     def _invalidate(self):
         if self._pending is not None:
+            if self._coordinator.expired(self._pending[0]):
+                self._authorization_denied = True
             self._coordinator.cancel(self._pending[0].request_id)
         self._pending = None
 
@@ -62,7 +67,7 @@ class DemoWorkflow:
                 self._processing_consent = ('REVOKED' if self._processing_consent == 'GRANTED'
                                             else 'DECLINED')
                 self._invalidate()
-                self._conversation = Conversation()
+                self._conversation = SafetyConversation()
                 self._outcome = None
             return {'processing_consent': self._processing_consent,
                     'processing_allowed': self._processing_consent == 'GRANTED'}
@@ -72,8 +77,10 @@ class DemoWorkflow:
         with self._lock:
             self._generation += 1
             self._invalidate()
-            self._conversation = Conversation()
+            self._conversation = SafetyConversation()
             self._session = secrets.token_hex(16)
+            self._denied_resources.clear()
+            self._authorization_denied = False
             self._outcome = None
             self._processing_consent = 'NOT_REQUESTED'
             return {'risk_state': self._conversation.state,
@@ -133,6 +140,11 @@ class DemoWorkflow:
         with self._lock:
             if self._conversation.state != 'CHALLENGED':
                 raise ValueError('policy requires a challenged conversation')
+            if self._pending is not None and self._coordinator.expired(self._pending[0]):
+                self._authorization_denied = True
+                self._invalidate()
+            if self._authorization_denied:
+                raise ValueError('authorization denied for this session')
             now = self._request_clock()
             while self._issued and self._issued[0] <= now - 3600:
                 self._issued.popleft()
@@ -146,6 +158,8 @@ class DemoWorkflow:
                 raise ChallengeRateLimited(max(1, math.ceil(max(waits))))
             operation = dict(destination=destination, amount_cents=amount_cents, currency='USD')
             resource = hashlib.sha256(json.dumps(operation, sort_keys=True).encode()).hexdigest()
+            if resource in self._denied_resources:
+                raise ValueError('operation denied for this session')
             self._invalidate()
             request = self._coordinator.create(session_id=self._session, resource=resource,
                                                reviewer=self._reviewer)
@@ -165,6 +179,10 @@ class DemoWorkflow:
             if self._conversation.state != 'CHALLENGED':
                 raise ValueError('policy denies action')
             request, operation, expected_challenge, attempts = self._pending
+            if self._coordinator.expired(request):
+                self._authorization_denied = True
+                self._invalidate()
+                raise ValueError('confirmation expired; authorization denied for this session')
             if decision.approved:
                 supplied = '' if challenge_response is None else str(challenge_response)
                 actual = hashlib.sha256(
@@ -172,6 +190,7 @@ class DemoWorkflow:
                 if not secrets.compare_digest(actual, expected_challenge):
                     attempts += 1
                     if attempts >= 3:
+                        self._authorization_denied = True
                         self._invalidate()
                     else:
                         self._pending = (request, operation, expected_challenge, attempts)
@@ -179,6 +198,8 @@ class DemoWorkflow:
             credential = self._coordinator.decide(decision)
             self._pending = None
             if credential is None:
+                self._authorization_denied = True
+                self._denied_resources.add(request.resource)
                 self._outcome = {'status': 'reviewer_denied', 'real_action_executed': False}
                 return dict(self._outcome)
             result = self._gate.execute(credential, session_id=self._session,

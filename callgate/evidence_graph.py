@@ -28,7 +28,10 @@ def evidence_graph(conversation):
         "nodes": [dict(id=node, **data) for node, data in graph.nodes(data=True)],
         "edges": [dict(source=u, target=v, **data) for u, v, data in graph.edges(data=True)],
         "policy_state": conversation.state,
-        "policy_note": "BLOCKED and COOLING_OFF may remain latched after evidence correction; graph shows current evidence only.",
+        "policy_note": ("All live restrictions may remain latched after correction; graph shows current evidence only."
+                        if hasattr(conversation, 'safety_categories') else
+                        "BLOCKED and COOLING_OFF may remain latched after evidence correction; graph shows current evidence only."),
+        "retained_safety_categories": sorted(getattr(conversation, 'safety_categories', set())),
         "identity_verified": False,
         "protected_actions_allowed": False,
     }

@@ -323,6 +323,16 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
                     provider_task.cancel()
                 await asyncio.gather(provider_task, return_exceptions=True)
 
+    @app.post('/api/protected-action', dependencies=[Depends(participant)])
+    def protected_action(body: Operation):
+        # This direct path has no authorization capability. The only execution
+        # path remains verified reviewer completion under trusted orchestration.
+        raise HTTPException(403, detail={
+            'code': 'POLICY_PROOF_REQUIRED',
+            'message': 'Direct speech or participant input cannot authorize an action.',
+            'real_action_executed': False,
+        })
+
     @app.post('/api/request', dependencies=[Depends(participant)])
     async def request_confirmation(body: Operation):
         if any(not task.done() for task in active_audio):

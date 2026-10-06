@@ -27,6 +27,7 @@ async function api(path, body) {
   } finally { clearTimeout(timer); }
   if (!response.ok) {
     if (response.status === 401) throw new Error('此入口凭据无效。请检查是否打开了正确角色的链接。');
+    if (response.status === 403) throw new Error('403 POLICY_PROOF_REQUIRED：输入本身不具有授权证明。没有执行真实转账。');
     if (response.status === 409) throw new Error('当前状态不允许操作，或请求已经变化、过期、使用。请刷新核对。');
     if (response.status === 422) throw new Error('请检查目标、金额或台词格式。');
     throw new Error('确认服务不可用或结果未确认。请刷新查看，系统不会自动重试批准。');
@@ -64,6 +65,9 @@ if (role === 'participant') {
       COOLING_OFF:'高影响请求伴随保密施压；必须暂停，不能通过确认立即放行。',
       BLOCKED:'检测到密码或验证码请求；这类操作不能通过确认放行。'};
     el('policy-explanation').textContent=explanations[result.state];
+    if (result.score === 0 && result.state !== 'UNVERIFIED') {
+      el('policy-explanation').textContent='当前转写已经修正，但此前触发的安全限制仍保留。修订不能自动解除本会话的限制。';
+    }
     el('status').textContent = '风险状态已更新；先前的待确认请求已失效。';
   };
   const refreshMetrics = async () => {
@@ -123,8 +127,17 @@ if (role === 'participant') {
   });
   action('ingest', async () => {
     const result = await api('/api/transcript', {segment_id:'s' + crypto.randomUUID(),
-      text:el('transcript').value, start_ms:0, end_ms:1000, final:true});
+      text:el('transcript').value, language:el('language').value || 'en', start_ms:0, end_ms:1000, final:true});
     showRisk(result);
+  });
+  action('test-gateway', async () => {
+    try {
+      await api('/api/protected-action', {destination:el('destination').value,
+        amount_cents:Number(el('amount').value)});
+      el('gateway-result').textContent='异常：直接请求不应成功，请检查服务版本。';
+    } catch (error) {
+      el('gateway-result').textContent=error.message;
+    }
   });
   el('start-audio').onclick = async () => {
     if (audio) return;
