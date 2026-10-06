@@ -45,6 +45,8 @@ Sources: `callgate/workflow.py:set_processing_consent/reset_session`, `callgate/
 
 ## Questions for qualified legal/privacy reviewers
 
+Saved-contact routing now stores synthetic identity identifiers, reviewer identifiers and credential-origin records in process memory (`callgate/contacts.py`; trusted setup in `scripts/start_review_demo.py`). The identity appears in the operation commitment and reviewer request. No real contact address or personal directory is enrolled by the launcher, and no contact data is sent to transcription by this routing code. Independent enrollment, directory persistence, revocation and deletion guarantees are unimplemented.
+
 - Which jurisdictions apply when callers and recipients are in different states or countries?
 - Is a transcription stream treated as recording, interception or another regulated processing activity?
 - What notices and consent are required from each participant?

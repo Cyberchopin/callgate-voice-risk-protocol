@@ -20,6 +20,8 @@ Open the exact printed URLs. Do not manually reuse an old role token. Text fallb
 
 | Failure | Next operation | Disclosure |
 |---|---|---|
+| No saved identity selected | Click **读取已登记联系人**, select the synthetic startup identity, and retry before expiry; run `python -m scripts.start_review_demo --contact-identity fictional-parent` for a fresh fictional configuration | Trusted-startup routing, not independent human enrollment |
+| Contact denies or request times out | Stop the attempted action and verify through a known saved channel; for a separate fictional rehearsal click **结束本场并开始新的独立测试** and obtain fresh consent | Changing identity or amount cannot authorize the denied session |
 | Internet unavailable | Stop microphone; select text language and paste fictional script; click text input | Text-to-policy demo, not live audio |
 | AssemblyAI fails or key absent | Stop microphone; use text fallback; do not repeatedly retry provider | External transcription unavailable |
 | Mandarin ASR fails | Preserve the observed failure; replay the exact intended script through Chinese text selection in a fresh session | Bilingual text rules tested; Mandarin streaming unvalidated |

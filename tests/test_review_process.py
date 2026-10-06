@@ -45,7 +45,8 @@ def test_two_process_approval_then_unavailable_reviewer():
         send.close()
         assert receive.poll(10), 'reviewer failed to provide public key'
         broker = context.Process(target=_broker,
-            args=(receive.recv_bytes(), participant_token, reviewer_token, broker_origin, broker_socket))
+            args=(receive.recv_bytes(), participant_token, reviewer_token, broker_origin, broker_socket,
+                  'saved-family'))
         broker.start()
         children.append(broker)
         # Child owns its duplicated listening socket; close parent duplicates.
@@ -59,8 +60,14 @@ def test_two_process_approval_then_unavailable_reviewer():
         risk = call(broker_origin, '/api/transcript', participant_token, dict(segment_id='s1',
             text='Move your savings into the secure holding wallet.', start_ms=0, end_ms=1000, final=True))
         assert risk['state'] == 'CHALLENGED'
+        assert call(broker_origin, '/api/contacts', participant_token)['identities'] == ['saved-family']
         operation = {'destination': '测试-wallet', 'amount_cents': 280000}
+        with pytest.raises(HTTPError) as missing_identity:
+            call(broker_origin, '/api/request', participant_token, operation)
+        assert missing_identity.value.code == 409
+        operation['claimed_identity'] = 'saved-family'
         bundle = call(broker_origin, '/api/request', participant_token, operation)
+        assert bundle['request']['claimed_identity'] == 'saved-family'
         expected_pending = {k: bundle[k] for k in ('request', 'operation')}
         assert call(reviewer_origin, '/api/pending', reviewer_token) == expected_pending
         approval = {'request_id': bundle['request']['request_id'], 'approved': True,

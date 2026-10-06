@@ -27,7 +27,7 @@ Use a large fictional amount selected by the owner; do not imply an actual loss.
 
 ### Runnable rehearsal today
 
-Start `python -m scripts.start_review_demo`. Use the printed participant and reviewer links on the same trusted computer. Choose Chinese or mixed text in the participant selector. Do not substitute screenshots of future functionality for live behavior.
+Start `python -m scripts.start_review_demo`. Use the printed participant and reviewer links on the same trusted computer. Choose Chinese or mixed text in the participant selector. Before requesting confirmation, click **读取已登记联系人** and select the synthetic saved identity. The reviewer sees the identity bound to the operation. This is trusted-startup routing, not independent human enrollment or remote phone delivery. Do not substitute screenshots of future functionality for live behavior.
 
 For the bilingual attack, read or paste:
 

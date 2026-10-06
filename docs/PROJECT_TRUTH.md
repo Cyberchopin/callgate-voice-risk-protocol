@@ -52,3 +52,9 @@ Legal consent, third-party retention, real phone capture, real transfers, and in
 - `python -m scripts.proof_demo` demonstrates a forced empty detector plus a separately signed valid simulated completion. It uses generated local test keys, not independent enrolled humans.
 - Prospective v2 inputs are synthetic text only with provisional author labels. They have not been passed to CallGate. Independent annotation remains pending.
 - See BUILD_LOG for actual command outputs, denominators, skipped integration tests and remaining gaps. No new accuracy result replaces the frozen pilot.
+
+## After the merged safety increment
+
+The owner squash-merged the safety increment into main as `1882e3d` on 2026-10-06. The former pending-PR language in historical entries refers to the earlier audit, not current merge status.
+
+The next increment adds trusted-startup claimed-identity routing, identity-bound operation commitments, recorded same-origin rejection, duplicate signing-key rejection, and scoped reviewer transport. Launcher contacts remain synthetic and ephemeral. Independently enrolled human identity and remote dual-device delivery remain unimplemented. See `docs/CONTACT_VERIFICATION.md` and the latest BUILD_LOG entry.

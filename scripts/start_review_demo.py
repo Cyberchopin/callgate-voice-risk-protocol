@@ -19,6 +19,7 @@ import uvicorn
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from callgate.confirmation import ConfirmationCoordinator
+from callgate.contacts import ContactDirectory, SavedContact
 from callgate.review_transport import create_broker_app, create_reviewer_app
 from callgate.verification import DemoVerificationGate
 from callgate.workflow import DemoWorkflow
@@ -50,17 +51,21 @@ def _reviewer(public_pipe, broker_origin, reviewer_origin, reviewer_token, liste
 
     app = create_reviewer_app(key, reviewer_token,
         lambda: call('/api/review/pending'),
-        lambda submission: call('/api/review/decision', submission.model_dump()), origin=reviewer_origin)
+        lambda submission: call('/api/review/decision', submission.model_dump()), origin=reviewer_origin,
+        expected_reviewer='local-reviewer')
     uvicorn.Server(uvicorn.Config(app, access_log=False, log_level='warning')).run(sockets=[listener])
 
 
-def _broker(public_bytes, participant_token, reviewer_token, origin, listener):
+def _broker(public_bytes, participant_token, reviewer_token, origin, listener, contact_identity):
     issuer = Ed25519PrivateKey.generate()
     coordinator = ConfirmationCoordinator('local-demo', issuer,
-        {'local-reviewer': Ed25519PublicKey.from_public_bytes(public_bytes)})
+        {'local-reviewer': Ed25519PublicKey.from_public_bytes(public_bytes)},
+        contacts=ContactDirectory([SavedContact(identity=contact_identity, reviewer='local-reviewer',
+            credential_origin='local-reviewer-process')]), initiator_origin='local-participant-session')
     workflow = DemoWorkflow(coordinator, DemoVerificationGate({'local-demo': issuer.public_key()}),
                             'local-reviewer')
     app = create_broker_app(workflow, participant_token, reviewer_token, origin=origin,
+        reviewer_identity='local-reviewer',
         metrics_database=Path(__file__).resolve().parents[1] / 'callgate-metrics.sqlite3')
     uvicorn.Server(uvicorn.Config(app, access_log=False, log_level='warning')).run(sockets=[listener])
 
@@ -90,7 +95,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--participant-port', type=int, default=8766)
     parser.add_argument('--reviewer-port', type=int, default=8767)
+    parser.add_argument('--contact-identity', default='saved-family',
+        help='Synthetic saved identity provisioned before this disposable session')
     args = parser.parse_args()
+    SavedContact(identity=args.contact_identity, reviewer='local-reviewer',
+        credential_origin='local-reviewer-process')
     env_path = Path(__file__).resolve().parents[1] / '.env'
     if env_path.exists() and not os.environ.get('ASSEMBLYAI_API_KEY'):
         for line in env_path.read_text(encoding='utf-8-sig').splitlines():
@@ -115,13 +124,16 @@ def main():
         public_bytes = receive.recv_bytes()
         receive.close()
         broker = context.Process(target=_broker,
-            args=(public_bytes, participant_token, reviewer_token, broker_origin, sockets[0]))
+            args=(public_bytes, participant_token, reviewer_token, broker_origin, sockets[0],
+                  args.contact_identity))
         broker.start()
         children.append(broker)
         # Give users capabilities on their own terminal, never in public files.
         print('Participant: ' + broker_origin + '/#token=' + participant_token, flush=True)
         print('Reviewer (keep separate): ' + reviewer_origin + '/#token=' + reviewer_token, flush=True)
         print('Local demo only. Keys expire on restart. Ctrl+C stops both processes.', flush=True)
+        print('Saved contact: ' + args.contact_identity +
+              '. Synthetic startup enrollment; one operator may still control both roles.', flush=True)
         while all(child.is_alive() for child in children):
             time.sleep(0.25)
         raise RuntimeError('one service stopped; restart both services')

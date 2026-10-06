@@ -36,5 +36,7 @@ User-directed final-product implementation began before the future event. The lo
 
 ## Rules audit
 
+Owner squash-merged the previously pending local increment as `1882e3d` on 2026-10-06. The pending labels above describe the original audit snapshot. Current follow-up adds trusted-startup saved-contact routing and credential-origin checks (`callgate/contacts.py`, `tests/test_contact_binding.py`); BUILT_NOW, not future-event work. Independent human enrollment and remote delivery remain incomplete.
+
 Official URL: https://la-ai-hackathon-2026.devpost.com/rules
 Accessed 2026-10-05. Pre-existing open source is allowed; only clearly disclosed new event features are judged. The page also contains an April deadline inconsistent with the October event header. Confirm final timing with organizers; do not invent an exact coding duration.
