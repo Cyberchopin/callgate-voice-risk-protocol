@@ -68,11 +68,29 @@ def test_denial_and_cross_session():
     assert workflow.complete(sign(reviewer, bundle, False))['status'] == 'reviewer_denied'
 
 
+def test_denied_operation_cannot_get_a_new_challenge_in_same_session():
+    workflow, reviewer, bundle, _ = setup()
+    workflow.complete(sign(reviewer, bundle, False))
+    with pytest.raises(ValueError, match='denied'):
+        workflow.request_confirmation(destination='demo-wallet', amount_cents=280000)
+    # Changing transcript revisions cannot clear the denial record.
+    workflow.ingest(Transcript(segment_id='s2', text='Please send money.',
+                               final=True, start_ms=1000, end_ms=2000))
+    with pytest.raises(ValueError, match='denied'):
+        workflow.request_confirmation(destination='demo-wallet', amount_cents=280000)
+
+
 def test_superseded_requests_do_not_exhaust_pending_capacity():
     workflow, reviewer, bundle, clock = setup()
     old = sign(reviewer, bundle)
     for _ in range(1001):
         clock[0] += 121
+        # Timeout now revokes the session. Capacity regression uses explicit
+        # independent sessions, not silent renewal of an expired authorization.
+        workflow.reset_session()
+        workflow.set_processing_consent(True)
+        workflow.ingest(Transcript(segment_id='s', text='Send money.', final=True,
+                                   start_ms=0, end_ms=1000))
         bundle = workflow.request_confirmation(destination='demo-wallet', amount_cents=280000)
     with pytest.raises(ValueError):
         workflow.complete(old, challenge_response='000000')

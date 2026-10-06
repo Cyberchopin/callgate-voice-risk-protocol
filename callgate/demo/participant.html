@@ -11,7 +11,7 @@
 <button id="new-session">结束本场并开始新的独立测试</button>
 <p id="consent-status" role="status">尚未取得本次会话的处理同意。</p></section>
 <section><h2>2. 实时语音或文本备用输入</h2>
-<p>实时语音使用 AssemblyAI。请只朗读虚构测试台词；文本分析用于断网或评审备用。当前风险规则支持有限的英文表达，转录成功不等于一定触发风险提醒。</p>
+<p>实时语音使用 AssemblyAI。请只朗读虚构测试台词；文本分析支持有限的英文、中文与混合规则。中文实时语音识别尚未验证，转录成功不等于一定触发风险提醒。</p>
 <blockquote lang="en">Move your savings into the secure holding wallet.</blockquote>
 <p>也可测试：“Send 500 dollars using Zelle right now.” 或 “Tell me your verification code.”</p>
 <button id="start-audio">开始麦克风</button><button id="stop-audio" disabled>停止麦克风</button>
@@ -22,7 +22,9 @@
 <button id="refresh-metrics">刷新测量汇总</button>
 <button id="export-metrics">下载测量报告</button>
 <p id="metrics-summary">本次服务启动后尚无完整测试。</p>
-<label for="transcript">英文测试台词</label>
+<label for="language">文本语言</label>
+<select id="language"><option value="en">English</option><option value="zh">中文</option><option value="en-zh">中英混说</option></select>
+<label for="transcript">虚构测试台词</label>
 <textarea id="transcript" rows="3">Move your savings into the secure holding wallet.</textarea>
 <button id="ingest">使用文本备用输入</button><p id="risk" role="status">尚未分析</p>
 <p id="policy-explanation">只有检测到可二次确认的高影响操作时，系统才生成挑战码。</p>
@@ -36,6 +38,8 @@
 <label for="amount">金额（美分，280000 = 2,800.00 美元）</label>
 <input id="amount" type="number" min="1" max="100000000" step="1" value="280000">
 <button id="request">提交给核验者</button>
+<button id="test-gateway">尝试直接操作（应被拒绝）</button>
+<p id="gateway-result" role="status">直接输入不能获得操作权限；批准仍需走独立核验流程。</p>
 <p id="challenge"></p>
 <p>只有“先核验”状态可提交。保密施压或密码请求需要暂停，这条演示路径不会放行。</p>
 </section>

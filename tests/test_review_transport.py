@@ -30,6 +30,17 @@ def bearer(token, **extra):
     return {"Authorization": f"Bearer {token}", **extra}
 
 
+def test_direct_protected_action_is_closed_even_when_detector_is_benign(demo):
+    demo.broker.post('/api/transcript', json=dict(SEGMENT, text='Hello.'),
+                     headers=bearer(PARTICIPANT_TOKEN))
+    response = demo.broker.post('/api/protected-action',
+        json={'destination': 'demo-wallet', 'amount_cents': 100},
+        headers=bearer(PARTICIPANT_TOKEN))
+    assert response.status_code == 403
+    assert response.json()['detail']['code'] == 'POLICY_PROOF_REQUIRED'
+    assert demo.workflow.status()['outcome'] is None
+
+
 def test_challenge_issuance_returns_429_and_retry_after(demo):
     demo.broker.post('/api/transcript', json=SEGMENT, headers=bearer(PARTICIPANT_TOKEN))
     for _ in range(5):

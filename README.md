@@ -22,7 +22,7 @@ CallGate connects live transcription, a deterministic risk policy, evidence insp
 
 | Area | Implemented today | Boundary |
 | :--- | :--- | :--- |
-| Speech | Streaming transcription and text fallback | English rules; ASR errors can change the result |
+| Speech | Streaming transcription and text fallback | Live text has bounded English/Mandarin/mixed rules; Mandarin streaming ASR is not validated |
 | Risk policy | Four states, evidence revisions, deduplicated scoring | Heuristic scores, not fraud probabilities |
 | Approval | Scoped, expiring confirmation for one simulated action | Separate role credentials, not enrolled human identities |
 | Evidence | Source graph and signed risk receipts | Integrity does not establish judgment correctness |
@@ -31,7 +31,7 @@ CallGate connects live transcription, a deterministic risk policy, evidence insp
 
 The pilot contains **60 calls: 36 development and 24 initially held out**. The test set has 8 scam, 8 benign and 8 ambiguous calls. It is now revealed and retired from final improvement claims. Expansion to **600 new scenario families is planned, not completed**.
 
-Independent reviewers are **not confirmed**; no completed outreach is recorded. The owner-led plan targets UCLA/TASL peers, with eligible Crystar peers as fallback: outreach by September 20, 2026, and two confirmations by September 23. These dates describe a plan, not completed review. See the [recruitment and scope conditions](evaluation_v1/STEP3_CONDITIONS.md).
+As of 2026-10-05 (America/Los_Angeles), independent reviewer recruitment status: **[owner to fill]**. No new outreach or completed independent annotation was verified in this audit. The old outreach deadlines have passed and are not active commitments. See the [recruitment and scope conditions](evaluation_v1/STEP3_CONDITIONS.md).
 
 ### Evaluation disclosure
 
@@ -55,6 +55,8 @@ flowchart LR
 ```
 
 Speech contributes evidence; it does not establish identity or grant authority. The trusted application supplies the proposed amount and destination. Transcript changes invalidate pending approval.
+
+The connected reviewer demo now uses a live safety policy with bounded bilingual rules and session-monotone safety categories. Corrected transcript evidence remains inspectable; corrections cannot relax a previously established risk restriction. Start a fresh consented session for a separate test. The archived English engine and frozen pilot remain unchanged; new live behavior is not represented by the old pilot scores.
 
 | State | Meaning in the connected demo |
 | :--- | :--- |
@@ -147,6 +149,14 @@ node --test tests/review_ui.test.cjs
 Recorded local checks: **184 Python tests and 3 Node logic tests passed**. These counts do not establish real-world accuracy or a green remote CI run. Check [GitHub Actions](https://github.com/Cyberchopin/CallGate_PreHackathon_Research/actions) for remote execution status.
 
 ## Security boundaries
+
+### Safety vs Coverage
+
+Authorization safety and warning coverage are different axes. The frozen pilot's recall is low: many scams receive no warning. The action gate still requires separately signed, scoped confirmation; neither transcript content nor a model's confidence grants permission. This safety claim applies only to the controlled simulator, not to a bank app or another device.
+
+A deny-all system can also have no unauthorized executions while helping nobody. Therefore authorization safety must be reported alongside legitimate-request completion rate and verification time. Population-level utility is **not yet measured**. The connected demo's approval tests prove a simulated path exists, not that real people complete it successfully. Prospective evaluation belongs in `evaluation_v2/`; do not tune on its blind annotation inputs.
+
+The direct protected-action endpoint rejects participant input with `POLICY_PROOF_REQUIRED`. This by itself is not superiority over deny-all; the separately verified completion path must also work. Reviewer denial now prevents the same committed operation from receiving a new challenge in that session. Resetting a demo session is not a production anti-abuse boundary.
 
 - **Approval is scoped to a simulation.** No bank, payment provider or telephone control is connected.
 - **Role separation is not identity verification.** Someone controlling both entry credentials and the challenge can self-approve. Both processes and their host are trusted.

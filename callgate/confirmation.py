@@ -62,6 +62,10 @@ class ConfirmationCoordinator:
             self._pending[request.request_id] = request
         return request
 
+    def expired(self, request):
+        """Trusted clock query; never accept a client-provided current time."""
+        return int(self._clock()) >= request.expires_at
+
     def decide(self, decision):
         decision = ReviewerDecision.model_validate(decision)
         with self._lock:
