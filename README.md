@@ -97,6 +97,8 @@ The launcher prints separate participant and reviewer entry links. Default ports
 
 ### Walk through a simulated approval
 
+The launcher now provisions a synthetic saved identity, `saved-family`. Click **读取已登记联系人** and select the identity before requesting a challenge. The request binds that identity to its startup-registered reviewer key; missing or unknown identities have no fallback. The reviewer sees the identity alongside the amount and destination. See [saved-contact verification](docs/CONTACT_VERIFICATION.md) for configuration, trust assumptions and rejection cases.
+
 1. In the participant view, consent to processing fictional test content.
 2. Submit “Move your savings into the secure holding wallet.” Stop recording before requesting confirmation.
 3. Review the fictional amount and destination, then generate a one-time challenge.
@@ -165,7 +167,7 @@ The direct protected-action endpoint rejects participant input with `POLICY_PROO
 - **Receipts attest to signed content.** They do not prove correct risk judgment or human identity, and they are not operation permissions. Authorization replay rejection is a separate mechanism.
 - **Consent is a product control.** Withdrawal cancels local provider tasks; it does not delete data already sent to the speech provider or establish legal consent from every speaker.
 
-The local prototype has no production tenant isolation, registered out-of-band contacts, trusted remote deployment or enforcement over real tools. Do not expose the demo publicly.
+The local prototype has a trusted-startup saved-contact directory and rejects matching initiator/contact credential origins. It has no independently verified contact enrollment, production tenant isolation, trusted remote deployment or enforcement over real tools. Different configured origins do not prove different humans; an operator holding both role URLs can still approve. Do not expose the demo publicly.
 
 <details>
 <summary><strong>Receipt verification and measurement retention</strong></summary>

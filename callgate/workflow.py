@@ -45,10 +45,13 @@ class DemoWorkflow:
 
     def status(self):
         with self._lock:
+            if self._pending is not None and self._coordinator.expired(self._pending[0]):
+                self._invalidate()
             return {'risk_state': self._conversation.state,
                     'processing_consent': self._processing_consent,
                     'processing_allowed': self._processing_consent == 'GRANTED',
                     'pending': self._pending is not None,
+                    'authorization_denied': self._authorization_denied,
                     'outcome': None if self._outcome is None else dict(self._outcome)}
 
     def set_processing_consent(self, granted):
@@ -126,17 +129,25 @@ class DemoWorkflow:
     def pending_confirmation(self):
         """Read-only view for the authenticated reviewer transport."""
         with self._lock:
+            if self._pending is not None and self._coordinator.expired(self._pending[0]):
+                self._invalidate()
             if self._pending is None:
                 return None
             request, operation, _, _ = self._pending
             return {'request': request.model_dump(), 'operation': dict(operation)}
 
-    def request_confirmation(self, *, destination, amount_cents):
+    def contact_identities(self):
+        return self._coordinator.contact_identities()
+
+    def request_confirmation(self, *, destination, amount_cents, claimed_identity=None):
         # Operation comes from the trusted application, never extracted speech.
         if not isinstance(destination, str) or not destination.strip() or len(destination) > 80:
             raise ValueError('invalid destination')
         if type(amount_cents) is not int or not 0 < amount_cents <= 100_000_000:
             raise ValueError('invalid amount')
+        if claimed_identity is not None and (not isinstance(claimed_identity, str)
+                or not claimed_identity or len(claimed_identity) > 80):
+            raise ValueError('invalid claimed identity')
         with self._lock:
             if self._conversation.state != 'CHALLENGED':
                 raise ValueError('policy requires a challenged conversation')
@@ -157,12 +168,14 @@ class DemoWorkflow:
             if waits:
                 raise ChallengeRateLimited(max(1, math.ceil(max(waits))))
             operation = dict(destination=destination, amount_cents=amount_cents, currency='USD')
+            if claimed_identity is not None:
+                operation['claimed_identity'] = claimed_identity
             resource = hashlib.sha256(json.dumps(operation, sort_keys=True).encode()).hexdigest()
             if resource in self._denied_resources:
                 raise ValueError('operation denied for this session')
             self._invalidate()
             request = self._coordinator.create(session_id=self._session, resource=resource,
-                                               reviewer=self._reviewer)
+                reviewer=self._reviewer, claimed_identity=claimed_identity)
             challenge = f'{secrets.randbelow(1_000_000):06d}'
             challenge_digest = hashlib.sha256(
                 (self._session + request.request_id + challenge).encode()).digest()

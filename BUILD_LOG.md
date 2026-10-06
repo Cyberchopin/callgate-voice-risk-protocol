@@ -105,3 +105,20 @@ Recreated the missing virtual-environment interpreter and reran checks against t
 - `git diff --check`: passed.
 
 The incomplete items above remain unchanged. This entry records local checks, not remote CI results or a merged PR.
+
+## 2026-10-06 — Claimed identity bound to saved contact
+
+Owner reported squash merge and requested continued development. Fetched main and confirmed merge commit `1882e3d`; created `feat/claimed-contact-verification` from main. Read PROJECT_TRUTH, FEATURE_LEDGER, the latest BUILD_LOG and git history. Historical pending-PR descriptions now have an explicit merge-status correction; no frozen pilot facts were changed.
+
+Implemented trusted-startup contact directory, identity-to-reviewer routing, recorded same-origin rejection, duplicate signing-key rejection, and identity-bound operation commitment. The launcher provisions one synthetic saved identity; participant selection and reviewer display are wired to the existing HTTP flow. Reviewer capability and signer endpoints check the selected addressee. Expired requests are cleared on status/pending reads and session authorization refusal is visible in the UI.
+
+Test-first evidence: the new contact test module initially failed collection because `callgate.contacts` did not exist. The timeout/status regression then failed because pending remained true after expiry. Both were implemented and verified. The existing spawned-process integration initially failed after changing the launcher signature; updated it to exercise required saved-identity selection and actual identity-bound approval rather than retaining legacy launcher behavior.
+
+Actual final checks:
+- `python -m pytest -q -p no:cacheprovider`: 225 passed / 228 collected, 3 optional integration skips, 2 deprecation warnings. This includes the spawned-process loopback integration; no external services used.
+- `node --test tests/review_ui.test.cjs`: 3 passed / 3 tests; `node --check callgate/demo/review-ui.js` passed.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts / 30 correlated families; no predictions, independent annotation pending.
+- `git diff --check`: passed.
+
+Remaining: independent human enrollment, real remote dual-device delivery, multiple-contact delivery fan-out, identity-provider authentication/revocation, persistent denial across restart, real tools, new joint evaluation, Mandarin streaming validation and browser/device visual rehearsal. Credential origins are trusted configuration records, not proof of physical people. One operator holding both launcher role URLs can still approve. The code rejects recorded same-origin credentials; it does not solve that broader problem.

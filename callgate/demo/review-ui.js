@@ -217,15 +217,31 @@ if (role === 'participant') {
     s.drainTimer=setTimeout(()=>{if(audio===s) finishAudio('最后转录等待超时，已关闭麦克风。');},15000);
   };
   window.addEventListener('pagehide', ()=>{if(audio) finishAudio('页面已关闭。');});
+  action('load-contacts', async () => {
+    const result = await api('/api/contacts');
+    const select = el('claimed-identity');
+    select.replaceChildren();
+    for (const identity of result.identities) {
+      const option = document.createElement('option');
+      option.value = identity; option.textContent = identity; select.appendChild(option);
+    }
+    el('contact-status').textContent = result.identities.length
+      ? '只向所选身份预先登记的渠道核验。登记尚不证明真人身份。'
+      : '当前为旧版核验演示，未登记联系人。请使用新版启动程序。';
+  });
   action('request', async () => {
-    const result = await api('/api/request', {destination:el('destination').value, amount_cents:Number(el('amount').value)});
+    const body = {destination:el('destination').value, amount_cents:Number(el('amount').value)};
+    if (el('claimed-identity').value) body.claimed_identity = el('claimed-identity').value;
+    const result = await api('/api/request', body);
     el('challenge').textContent = '一次性挑战码：' + result.out_of_band_challenge + '。请通过演示之外的第二条渠道告诉核验者。';
     el('status').textContent = '等待核验者核对操作并输入挑战码。当前未执行操作。';
   });
   action('refresh', async () => {
     const result = await api('/api/status');
-    el('status').textContent = result.outcome ? outcomeText(result.outcome) : result.pending
-      ? '仍等待核验，未执行操作；过期请求需要重新提交。' : '没有当前确认请求，未执行操作。';
+    el('status').textContent = result.authorization_denied
+      ? '核验被拒绝或已超时，本次会话不会执行操作。请暂停并通过已保存的联系方式自行核实。'
+      : result.outcome ? outcomeText(result.outcome) : result.pending
+      ? '仍等待核验，未执行操作；超时会拒绝本次会话的授权。' : '没有当前确认请求，未执行操作。';
   });
 } else {
   let pending = null;
@@ -238,7 +254,8 @@ if (role === 'participant') {
     if (!bundle) { el('operation').textContent = '没有待确认请求。'; return; }
     pending = bundle.request;
     el('operation').textContent = '目标：' + bundle.operation.destination + '\n金额：' +
-      (bundle.operation.amount_cents / 100).toFixed(2) + ' USD\n会话：' + pending.session_id;
+      (bundle.operation.amount_cents / 100).toFixed(2) + ' USD\n声称身份：' +
+      (pending.claimed_identity || '旧版未绑定') + '\n会话：' + pending.session_id;
     el('expiry').textContent = '有效至：' + new Date(pending.expires_at * 1000).toLocaleTimeString();
     el('status').textContent = '核对金额和目标后，再明确选择。';
     disable();

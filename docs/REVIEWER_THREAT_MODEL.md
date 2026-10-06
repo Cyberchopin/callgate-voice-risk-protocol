@@ -2,6 +2,8 @@
 
 Status: design draft, not an implemented identity provider.
 
+The current launcher now provisions a synthetic saved-contact route before the session. `ContactDirectory` binds claimed identity to a reviewer public key and trusted credential-origin record; the coordinator rejects a matching initiator origin and shared contact keys. Reviewer transport is scoped to its addressee. These implemented checks do not establish independent human ownership, revocation or remote device enrollment. See `CONTACT_VERIFICATION.md`.
+
 Protect operation scope, approval authority, signing keys and one-time execution.
 The participant and caller may be adversarial. The broker host, reviewer process
 and both signing keys are currently trusted. Role URLs are bearer capabilities.

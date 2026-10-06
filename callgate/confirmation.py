@@ -19,6 +19,7 @@ class ConfirmationRequest(StrictModel):
     version: Literal["callgate-confirmation-v1"] = "callgate-confirmation-v1"
     request_id: str
     reviewer: str
+    claimed_identity: str | None = Field(default=None, min_length=1, max_length=80)
     session_id: str
     resource: str
     action: Literal["simulate_protected_action"] = "simulate_protected_action"
@@ -38,15 +39,32 @@ def decision_bytes(request, approved):
 
 
 class ConfirmationCoordinator:
-    def __init__(self, issuer, signing_key, reviewers, *, clock=time.time):
+    def __init__(self, issuer, signing_key, reviewers, *, clock=time.time,
+                 contacts=None, initiator_origin=None):
         self._issuer, self._signing_key = issuer, signing_key
         self._reviewers = dict(reviewers)
+        self._contacts = contacts
+        self._initiator_origin = initiator_origin
+        if contacts is not None:
+            if not isinstance(initiator_origin, str) or not initiator_origin.strip():
+                raise ValueError('trusted initiator credential origin required')
+            contacts.validate_keys(self._reviewers)
         self._clock = clock
         self._pending = {}
         self._lock = threading.Lock()
 
-    def create(self, *, session_id, resource, reviewer):
+    def contact_identities(self):
+        return [] if self._contacts is None else self._contacts.identities()
+
+    def create(self, *, session_id, resource, reviewer=None, claimed_identity=None):
         """Trusted orchestration selects reviewer; caller speech cannot enroll keys."""
+        if self._contacts is not None:
+            selected = self._contacts.resolve(claimed_identity, self._initiator_origin)
+            if reviewer is not None and reviewer != selected:
+                raise ValueError('saved contact reviewer cannot be overridden')
+            reviewer = selected
+        elif claimed_identity is not None:
+            raise ValueError('saved contact enrollment required')
         if reviewer not in self._reviewers:
             raise ValueError("unknown reviewer")
         now = int(self._clock())
@@ -54,7 +72,8 @@ class ConfirmationCoordinator:
         VerificationClaim(issuer=self._issuer, session_id=session_id, resource=resource,
                           issued_at=now, expires_at=now+120, nonce=secrets.token_hex(32))
         request = ConfirmationRequest(request_id=secrets.token_hex(32), reviewer=reviewer,
-            session_id=session_id, resource=resource, issued_at=now, expires_at=now+120)
+            session_id=session_id, resource=resource, claimed_identity=claimed_identity,
+            issued_at=now, expires_at=now+120)
         with self._lock:
             self._pending = {k:v for k,v in self._pending.items() if v.expires_at > now}
             if len(self._pending) >= 1000:

@@ -34,6 +34,11 @@ class Operation(StrictModel):
     amount_cents: int = Field(gt=0, le=100_000_000)
 
 
+class ContactOperation(Operation):
+    claimed_identity: str | None = Field(default=None, min_length=1, max_length=80,
+        pattern=r'^[a-zA-Z0-9_-]+$')
+
+
 class Approval(StrictModel):
     request_id: str = Field(pattern=r'^[a-f0-9]{64}$')
     approved: bool
@@ -109,9 +114,12 @@ def configured_asr_rate():
     return rate if math.isfinite(rate) and 0 <= rate <= 10_000 else None
 
 
-def create_broker_app(workflow, participant_token, reviewer_token, *, origin='http://127.0.0.1:8766', metrics_database=None):
+def create_broker_app(workflow, participant_token, reviewer_token, *, origin='http://127.0.0.1:8766',
+                      metrics_database=None, reviewer_identity=None):
     if not participant_token or not reviewer_token or participant_token == reviewer_token:
         raise ValueError('distinct role credentials required')
+    if len(workflow.contact_identities()) > 1 and reviewer_identity is None:
+        raise ValueError('explicit reviewer route identity required')
     app = guarded_app(origin, 'participant.html')
     live_metrics = LiveMetrics(database=metrics_database)
     receipt_key = Ed25519PrivateKey.generate()
@@ -334,7 +342,7 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
         })
 
     @app.post('/api/request', dependencies=[Depends(participant)])
-    async def request_confirmation(body: Operation):
+    async def request_confirmation(body: ContactOperation):
         if any(not task.done() for task in active_audio):
             raise HTTPException(409, 'finish audio before requesting confirmation')
         try:
@@ -345,12 +353,23 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
         except ValueError:
             raise HTTPException(409, 'policy prevents confirmation') from None
 
+    @app.get('/api/contacts', dependencies=[Depends(participant)])
+    def contacts():
+        return {'identities': workflow.contact_identities(),
+                'enrollment': 'trusted_startup_not_verified_human_identity'}
+
     @app.get('/api/review/pending', dependencies=[Depends(reviewer)])
     def pending():
-        return workflow.pending_confirmation()
+        bundle = workflow.pending_confirmation()
+        if bundle is not None and reviewer_identity is not None:
+            if bundle['request']['reviewer'] != reviewer_identity:
+                return None
+        return bundle
 
     @app.post('/api/review/decision', dependencies=[Depends(reviewer)])
     async def decision(body: SubmittedDecision):
+        if reviewer_identity is not None and body.decision.request.reviewer != reviewer_identity:
+            raise HTTPException(409, 'request belongs to another saved contact')
         if any(not task.done() for task in active_audio):
             raise HTTPException(409, 'finish audio before deciding')
         try:
@@ -362,7 +381,7 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
 
 
 def create_reviewer_app(signing_key, reviewer_token, fetch_pending, submit_decision, *,
-                        origin='http://127.0.0.1:8767'):
+                        origin='http://127.0.0.1:8767', expected_reviewer=None):
     if not reviewer_token:
         raise ValueError('reviewer credential required')
     app = guarded_app(origin, 'reviewer.html')
@@ -377,10 +396,15 @@ def create_reviewer_app(signing_key, reviewer_token, fetch_pending, submit_decis
             if bundle is None:
                 return None
             request = ConfirmationRequest.model_validate(bundle['request'])
+            if expected_reviewer is not None and request.reviewer != expected_reviewer:
+                raise ValueError('request addressed to another saved contact')
             operation = dict(bundle['operation'])
             if operation.pop('currency') != 'USD':
                 raise ValueError('unsupported currency')
-            operation = {**Operation.model_validate(operation).model_dump(), 'currency': 'USD'}
+            operation = {**ContactOperation.model_validate(operation).model_dump(exclude_none=True),
+                         'currency': 'USD'}
+            if operation.get('claimed_identity') != request.claimed_identity:
+                raise ValueError('claimed identity commitment mismatch')
             digest = hashlib.sha256(json.dumps(operation, sort_keys=True).encode()).hexdigest()
             if not hmac.compare_digest(digest, request.resource):
                 raise ValueError('operation commitment mismatch')

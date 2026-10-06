@@ -34,10 +34,14 @@
 <p>继续提交新内容会使待确认请求失效。可提交 “Do not tell anyone.” 检查保密施压时的拒绝。</p>
 </section>
 <section><h2>3. 申请一次演示操作</h2>
+<label for="claimed-identity">来电声称是哪个已登记联系人？</label>
+<select id="claimed-identity"><option value="">尚未读取联系人</option></select>
+<button id="load-contacts">读取已登记联系人</button>
+<p id="contact-status">登记来自可信启动配置；来电方不能添加或更换联系人的公钥。</p>
 <label for="destination">目标（虚构）</label><input id="destination" maxlength="80" value="demo-wallet">
 <label for="amount">金额（美分，280000 = 2,800.00 美元）</label>
 <input id="amount" type="number" min="1" max="100000000" step="1" value="280000">
-<button id="request">提交给核验者</button>
+<button id="request">联系对应的已登记核验者</button>
 <button id="test-gateway">尝试直接操作（应被拒绝）</button>
 <p id="gateway-result" role="status">直接输入不能获得操作权限；批准仍需走独立核验流程。</p>
 <p id="challenge"></p>
