@@ -1,4 +1,4 @@
-"""Start two ephemeral loopback processes. No cloud call or persistent key file.
+"""Start ephemeral loopback broker and reviewer processes. No persistent key file.
 
 Run: python -m scripts.start_review_demo
 Only the reviewer child generates/holds its private key. Startup URLs are local
@@ -30,7 +30,8 @@ class NoRedirects(HTTPRedirectHandler):
         return None
 
 
-def _reviewer(public_pipe, broker_origin, reviewer_origin, reviewer_token, listener):
+def _reviewer(public_pipe, broker_origin, reviewer_origin, reviewer_token, listener,
+              reviewer_identity='local-reviewer'):
     key = Ed25519PrivateKey.generate()
     public_pipe.send_bytes(key.public_key().public_bytes(
         serialization.Encoding.Raw, serialization.PublicFormat.Raw))
@@ -52,20 +53,24 @@ def _reviewer(public_pipe, broker_origin, reviewer_origin, reviewer_token, liste
     app = create_reviewer_app(key, reviewer_token,
         lambda: call('/api/review/pending'),
         lambda submission: call('/api/review/decision', submission.model_dump()), origin=reviewer_origin,
-        expected_reviewer='local-reviewer')
+        expected_reviewer=reviewer_identity)
     uvicorn.Server(uvicorn.Config(app, access_log=False, log_level='warning')).run(sockets=[listener])
 
 
-def _broker(public_bytes, participant_token, reviewer_token, origin, listener, contact_identity):
+def _broker(public_bytes, participant_token, reviewer_token, origin, listener, contact_identity,
+            extra_contacts=()):
     issuer = Ed25519PrivateKey.generate()
+    rows = [dict(identity=contact_identity, reviewer='local-reviewer',
+                 public_bytes=public_bytes, token=reviewer_token), *extra_contacts]
+    directory = ContactDirectory([SavedContact(identity=row['identity'], reviewer=row['reviewer'],
+        credential_origin=row['reviewer'] + '-process') for row in rows])
     coordinator = ConfirmationCoordinator('local-demo', issuer,
-        {'local-reviewer': Ed25519PublicKey.from_public_bytes(public_bytes)},
-        contacts=ContactDirectory([SavedContact(identity=contact_identity, reviewer='local-reviewer',
-            credential_origin='local-reviewer-process')]), initiator_origin='local-participant-session')
+        {row['reviewer']:Ed25519PublicKey.from_public_bytes(row['public_bytes']) for row in rows},
+        contacts=directory, initiator_origin='local-participant-session')
     workflow = DemoWorkflow(coordinator, DemoVerificationGate({'local-demo': issuer.public_key()}),
-                            'local-reviewer')
-    app = create_broker_app(workflow, participant_token, reviewer_token, origin=origin,
-        reviewer_identity='local-reviewer',
+                            None)
+    app = create_broker_app(workflow, participant_token,
+        {row['reviewer']:row['token'] for row in rows}, origin=origin,
         metrics_database=Path(__file__).resolve().parents[1] / 'callgate-metrics.sqlite3')
     uvicorn.Server(uvicorn.Config(app, access_log=False, log_level='warning')).run(sockets=[listener])
 
@@ -91,15 +96,26 @@ def _bind_with_fallback(preferred_port):
             raise
 
 
+def _contact_ids(values):
+    identities = ['saved-family'] if values is None else list(values)
+    if not 1 <= len(identities) <= 4 or len(set(identities)) != len(identities):
+        raise ValueError('supply distinct saved identities within the local demo capacity')
+    for identity in identities:
+        SavedContact(identity=identity, reviewer='placeholder', credential_origin='placeholder')
+    return identities
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--participant-port', type=int, default=8766)
     parser.add_argument('--reviewer-port', type=int, default=8767)
-    parser.add_argument('--contact-identity', default='saved-family',
-        help='Synthetic saved identity provisioned before this disposable session')
+    parser.add_argument('--contact-identity', action='append',
+        help='Repeat for separate synthetic saved contacts; default saved-family')
     args = parser.parse_args()
-    SavedContact(identity=args.contact_identity, reviewer='local-reviewer',
-        credential_origin='local-reviewer-process')
+    try:
+        identities = _contact_ids(args.contact_identity)
+    except ValueError as error:
+        parser.error(str(error))
     env_path = Path(__file__).resolve().parents[1] / '.env'
     if env_path.exists() and not os.environ.get('ASSEMBLYAI_API_KEY'):
         for line in env_path.read_text(encoding='utf-8-sig').splitlines():
@@ -108,32 +124,41 @@ def main():
     sockets, children = [], []
     try:
         sockets.append(_bind_with_fallback(args.participant_port))
-        sockets.append(_bind_with_fallback(args.reviewer_port))
         broker_origin = 'http://127.0.0.1:' + str(sockets[0].getsockname()[1])
-        reviewer_origin = 'http://127.0.0.1:' + str(sockets[1].getsockname()[1])
-        participant_token, reviewer_token = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+        participant_token = secrets.token_urlsafe(32)
         context = mp.get_context('spawn')
-        receive, send = context.Pipe(duplex=False)
-        reviewer = context.Process(target=_reviewer,
-            args=(send, broker_origin, reviewer_origin, reviewer_token, sockets[1]))
-        reviewer.start()
-        children.append(reviewer)
-        send.close()
-        if not receive.poll(15):
-            raise RuntimeError('reviewer startup failed')
-        public_bytes = receive.recv_bytes()
-        receive.close()
+        rows = []
+        for index, identity in enumerate(identities):
+            sockets.append(_bind_with_fallback(args.reviewer_port if index == 0 else 0))
+            reviewer_origin = 'http://127.0.0.1:' + str(sockets[-1].getsockname()[1])
+            reviewer_name = 'local-reviewer' if index == 0 else f'local-reviewer-{index}'
+            reviewer_token = secrets.token_urlsafe(32)
+            receive, send = context.Pipe(duplex=False)
+            try:
+                reviewer = context.Process(target=_reviewer,
+                    args=(send, broker_origin, reviewer_origin, reviewer_token, sockets[-1], reviewer_name))
+                reviewer.start()
+                children.append(reviewer)
+                send.close()
+                if not receive.poll(15):
+                    raise RuntimeError('reviewer startup failed')
+                rows.append(dict(identity=identity, reviewer=reviewer_name, token=reviewer_token,
+                                 public_bytes=receive.recv_bytes(), origin=reviewer_origin))
+            finally:
+                receive.close()
+                send.close()
         broker = context.Process(target=_broker,
-            args=(public_bytes, participant_token, reviewer_token, broker_origin, sockets[0],
-                  args.contact_identity))
+            args=(rows[0]['public_bytes'], participant_token, rows[0]['token'], broker_origin, sockets[0],
+                  rows[0]['identity'], rows[1:]))
         broker.start()
         children.append(broker)
         # Give users capabilities on their own terminal, never in public files.
         print('Participant: ' + broker_origin + '/#token=' + participant_token, flush=True)
-        print('Reviewer (keep separate): ' + reviewer_origin + '/#token=' + reviewer_token, flush=True)
-        print('Local demo only. Keys expire on restart. Ctrl+C stops both processes.', flush=True)
-        print('Saved contact: ' + args.contact_identity +
-              '. Synthetic startup enrollment; one operator may still control both roles.', flush=True)
+        for row in rows:
+            print('Reviewer [' + row['identity'] + '] (keep separate): ' + row['origin'] +
+                  '/#token=' + row['token'], flush=True)
+        print('Local demo only. Keys expire on restart. Ctrl+C stops all processes.', flush=True)
+        print('Synthetic startup enrollment; one operator may still control all roles.', flush=True)
         while all(child.is_alive() for child in children):
             time.sleep(0.25)
         raise RuntimeError('one service stopped; restart both services')

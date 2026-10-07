@@ -116,9 +116,20 @@ def configured_asr_rate():
 
 def create_broker_app(workflow, participant_token, reviewer_token, *, origin='http://127.0.0.1:8766',
                       metrics_database=None, reviewer_identity=None):
-    if not participant_token or not reviewer_token or participant_token == reviewer_token:
+    if not isinstance(participant_token, str) or not participant_token:
         raise ValueError('distinct role credentials required')
-    if len(workflow.contact_identities()) > 1 and reviewer_identity is None:
+    if isinstance(reviewer_token, dict):
+        if reviewer_identity is not None:
+            raise ValueError('ambiguous reviewer route configuration')
+        reviewer_routes = dict(reviewer_token)
+    else:
+        reviewer_routes = {reviewer_identity: reviewer_token}
+    values = list(reviewer_routes.values())
+    if (not values or any(not isinstance(t, str) or not t for t in values)
+            or len(set(values)) != len(values) or participant_token in values
+            or any(k is not None and (not isinstance(k, str) or not k) for k in reviewer_routes)):
+        raise ValueError('distinct role credentials required')
+    if len(workflow.contact_identities()) > 1 and None in reviewer_routes:
         raise ValueError('explicit reviewer route identity required')
     app = guarded_app(origin, 'participant.html')
     live_metrics = LiveMetrics(database=metrics_database)
@@ -132,7 +143,17 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
-    participant, reviewer = bearer(participant_token), bearer(reviewer_token)
+    participant = bearer(participant_token)
+
+    def reviewer(request: Request):
+        header = request.headers.get('authorization', '').encode()
+        found, principal = False, None
+        for identity, token in reviewer_routes.items():
+            if hmac.compare_digest(header, ('Bearer ' + token).encode()):
+                found, principal = True, identity
+        if not found:
+            raise HTTPException(401, 'invalid role credential')
+        return principal
 
     @app.get('/api/status', dependencies=[Depends(participant)])
     def status():
@@ -358,17 +379,17 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
         return {'identities': workflow.contact_identities(),
                 'enrollment': 'trusted_startup_not_verified_human_identity'}
 
-    @app.get('/api/review/pending', dependencies=[Depends(reviewer)])
-    def pending():
+    @app.get('/api/review/pending')
+    def pending(principal=Depends(reviewer)):
         bundle = workflow.pending_confirmation()
-        if bundle is not None and reviewer_identity is not None:
-            if bundle['request']['reviewer'] != reviewer_identity:
+        if bundle is not None and principal is not None:
+            if bundle['request']['reviewer'] != principal:
                 return None
         return bundle
 
-    @app.post('/api/review/decision', dependencies=[Depends(reviewer)])
-    async def decision(body: SubmittedDecision):
-        if reviewer_identity is not None and body.decision.request.reviewer != reviewer_identity:
+    @app.post('/api/review/decision')
+    async def decision(body: SubmittedDecision, principal=Depends(reviewer)):
+        if principal is not None and body.decision.request.reviewer != principal:
             raise HTTPException(409, 'request belongs to another saved contact')
         if any(not task.done() for task in active_audio):
             raise HTTPException(409, 'finish audio before deciding')

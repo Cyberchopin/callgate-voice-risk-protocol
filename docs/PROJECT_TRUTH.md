@@ -58,3 +58,5 @@ Legal consent, third-party retention, real phone capture, real transfers, and in
 The owner squash-merged the safety increment into main as `1882e3d` on 2026-10-06. The former pending-PR language in historical entries refers to the earlier audit, not current merge status.
 
 The next increment adds trusted-startup claimed-identity routing, identity-bound operation commitments, recorded same-origin rejection, duplicate signing-key rejection, and scoped reviewer transport. Launcher contacts remain synthetic and ephemeral. Independently enrolled human identity and remote dual-device delivery remain unimplemented. See `docs/CONTACT_VERIFICATION.md` and the latest BUILD_LOG entry.
+
+Owner merged that contact increment as `6855522` before the next work. The follow-up now connects multiple synthetic saved contacts to independent reviewer processes and scoped bearer routes. Actual loopback integration checks identity switching, cross-contact invisibility/refusal and valid completion. Different processes and keys still do not prove different humans.

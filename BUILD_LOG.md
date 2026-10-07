@@ -122,3 +122,23 @@ Actual final checks:
 - `git diff --check`: passed.
 
 Remaining: independent human enrollment, real remote dual-device delivery, multiple-contact delivery fan-out, identity-provider authentication/revocation, persistent denial across restart, real tools, new joint evaluation, Mandarin streaming validation and browser/device visual rehearsal. Credential origins are trusted configuration records, not proof of physical people. One operator holding both launcher role URLs can still approve. The code rejects recorded same-origin credentials; it does not solve that broader problem.
+
+## 2026-10-07 — Multiple scoped saved-contact reviewer processes
+
+Owner requested continued work and a new PR. Fetched main: previous contact PR squash-merged as `6855522`; its PR-triggered workflow completed successfully (observed through GitHub). Created `feat/multiple-contact-routes` from that main snapshot; read current truth/ledger/build log and git history.
+
+Implemented repeated `--contact-identity` provisioning for distinct synthetic saved contacts. Each reviewer process generates its own private signing key; only public keys reach the broker. Broker bearer authentication now resolves a trusted reviewer principal from distinct per-reviewer capabilities, filters pending requests to that principal and refuses decisions addressed to another contact. Participant credentials, unknown capabilities, duplicate tokens, missing/invalid route credentials and unscoped multi-contact configuration are rejected. Single-contact startup and legacy programmatic credential configuration remain supported.
+
+Launcher validates distinct identifiers and bounded local capacity before starting services, prints labeled reviewer entries, uses automatic additional loopback ports, and stops all children if any process ends. Switching claimed identity invalidates the previous pending request; no failover to an unrelated contact is introduced. README, contact guide, truth/ledger and failure runbook updated.
+
+Test-first evidence: new tests initially failed collection because `_contact_ids` did not exist. Added capability/configuration regressions and actual HTTP integration through a broker and separate family/bank reviewer processes. Integration checks cross-contact invisibility, wrong entry capability, wrong addressee, identity switching, signed simulated completion and replay refusal. A malformed insertion in the new test was caught during collection and corrected before the final checks.
+
+Final actual checks:
+- `python -m pytest -q -p no:cacheprovider`: 240 passed / 243 collected, 3 optional integration skips, 2 deprecation warnings.
+- `node --test tests/review_ui.test.cjs`: 3 passed / 3 tests; JavaScript syntax check passed.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts / 30 correlated families, manifests/schema verified, no CallGate predictions run.
+- Actual launcher CLI smoke with separate saved-family/saved-bank flags and automatic ports: two correctly labeled reviewer entries and authenticated broker directory HTTP response verified. Generated capability values were omitted from output. Initial smoke harness used buffered line reading with select and timed out; corrected the harness to read bytes and reran successfully. All spawned smoke processes were stopped.
+- `git diff --check`: passed.
+
+Remaining: remote device/phone delivery, independently verified humans, identity-provider authentication and revocation, persistent denial/replay lifecycle across restart, production integrations, independent annotations/new joint safety-utility results, Mandarin streaming validation and visual device rehearsal. Multi-contact routing here is local and synthetic; one operator may still control every role entry. No frozen pilot labels, results or archive hashes changed.
