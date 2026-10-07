@@ -6,6 +6,16 @@ Implemented: trusted-startup contact routing for the local simulator. Not implem
 
 Run `python -m scripts.start_review_demo`. Startup creates a synthetic `saved-family` entry with the reviewer child's public key. To give the fictional identity a different identifier, run `python -m scripts.start_review_demo --contact-identity fictional-parent`.
 
+For separate family and bank roles, run:
+
+```bash
+python -m scripts.start_review_demo --contact-identity saved-family --contact-identity saved-bank
+```
+
+The launcher prints a labeled entry for each contact. Give each fictional role its corresponding reviewer entry. Each reviewer process generates its own signing key and has its own bearer capability. The participant loads the directory and selects the claimed identity. Only that identity's reviewer sees the pending request. Switching the identity replaces the previous request and invalidates its signature and challenge. No request is sent to a different contact as a fallback.
+
+The local launcher accepts up to four distinct synthetic identities, rejecting duplicate or invalid names before opening sockets. The default reviewer port applies to the first contact; additional contacts use operating-system-assigned loopback ports. Use the printed URLs. If any process stops, the supervisor stops the whole demo; it does not silently substitute another reviewer.
+
 Open the printed participant and reviewer links on the trusted host. Grant processing consent, submit `Send money.`, click **读取已登记联系人**, select the caller's claimed identity, and request confirmation for a fictional amount/destination. The reviewer checks the displayed identity and operation, receives the challenge through the agreed separate demo channel, and approves or denies. Approval only completes a simulation.
 
 Unknown or omitted identities are rejected in the launcher. There is no contact enrollment endpoint and speech cannot add keys. The identity selection is an explicit participant input; the system does not claim to extract identity reliably from a transcript.
@@ -22,7 +32,7 @@ The broker capability is scoped to its configured reviewer route; a request addr
 
 ## Boundaries
 
-- The launcher has one synthetic saved contact and one reviewer process. Multiple registered keys are supported and tested in the coordinator, but multi-contact delivery and remote devices are not implemented.
+- Multiple synthetic saved contacts now have separate loopback reviewer processes and scoped bearer routes. Remote devices, independent human enrollment and phone delivery are not implemented.
 - Startup generates both role entry URLs on the same trusted host. An operator may hold both. This increment rejects recorded same-origin credentials, not all self-approval by one human controlling different credentials.
 - Startup enrollment records can be wrong. Account/key compromise, collusion, recovery, revocation and persistent authorization state remain unresolved.
 - Restart invalidates ephemeral keys and pending requests. No claim of durable production denial across restart is made.
@@ -31,4 +41,4 @@ The broker capability is scoped to its configured reviewer route; a request addr
 
 ## Verify
 
-Run `python -m pytest tests/test_contact_binding.py tests/test_review_process.py -q -p no:cacheprovider`. These cover routing, same-origin rejection, wrong-key signatures, modified identity/session/resource/nonce, replay, expiry, denial, scoped reviewer capabilities, and actual loopback HTTP completion through the spawned processes.
+Run `python -m pytest tests/test_contact_binding.py tests/test_multiple_contacts.py tests/test_review_process.py -q -p no:cacheprovider`. These cover routing, same-origin rejection, wrong-key signatures, modified identity/session/resource/nonce, replay, expiry, denial, distinct reviewer capabilities, identity switching, invalid CLI provisioning, and actual loopback HTTP completion through separate reviewer processes.

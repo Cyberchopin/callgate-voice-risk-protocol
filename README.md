@@ -99,6 +99,8 @@ The launcher prints separate participant and reviewer entry links. Default ports
 
 The launcher now provisions a synthetic saved identity, `saved-family`. Click **读取已登记联系人** and select the identity before requesting a challenge. The request binds that identity to its startup-registered reviewer key; missing or unknown identities have no fallback. The reviewer sees the identity alongside the amount and destination. See [saved-contact verification](docs/CONTACT_VERIFICATION.md) for configuration, trust assumptions and rejection cases.
 
+To rehearse separate family and bank contacts, repeat `--contact-identity saved-family --contact-identity saved-bank` when starting the launcher. Each contact receives a labeled reviewer entry, separate signing key and scoped capability; requests are visible only to their registered addressee. This remains a local synthetic enrollment demo.
+
 1. In the participant view, consent to processing fictional test content.
 2. Submit “Move your savings into the secure holding wallet.” Stop recording before requesting confirmation.
 3. Review the fictional amount and destination, then generate a one-time challenge.
