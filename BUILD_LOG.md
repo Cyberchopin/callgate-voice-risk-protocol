@@ -142,3 +142,24 @@ Final actual checks:
 - `git diff --check`: passed.
 
 Remaining: remote device/phone delivery, independently verified humans, identity-provider authentication and revocation, persistent denial/replay lifecycle across restart, production integrations, independent annotations/new joint safety-utility results, Mandarin streaming validation and visual device rehearsal. Multi-contact routing here is local and synthetic; one operator may still control every role entry. No frozen pilot labels, results or archive hashes changed.
+
+## 2026-10-07 — Checkout skin and privacy-bounded Sentry hooks
+
+Owner supplied sponsor-track guidance: keep Visa alignment as a thin checkout skin, and replace generic OpenTelemetry work with Sentry-style tracing/logging guarded by privacy tests. Fetched remote main and confirmed the previous multiple-contact PR was squash-merged as `7405a36`; created `feat/checkout-observability` from `origin/main`.
+
+Implemented a simulated AI assistant checkout surface on the participant page. The protected-action endpoint, challenge issuance, reviewer decision and completion path remain the same backend flow; this is not a shopping agent, merchant integration or real payment network. The page states the checkout is simulated and no real payment occurs.
+
+Added optional Sentry observability hooks in `callgate/sentry_observability.py`, wired into broker transcript ingestion, challenge creation, reviewer decisions and direct gateway refusal. The hooks are disabled unless `CALLGATE_SENTRY_DSN` is present or tests pass a fake transport. The sanitizer keeps session hashes, state names, event types, durations, outcome statuses and error codes, and drops transcript text, destinations, plain amounts, contact identity fields and challenge responses. `send_default_pii` is disabled when the optional Sentry SDK is configured. Added an `observability` optional dependency entry.
+
+Test-first evidence: `tests/test_telemetry_privacy.py` captures emitted records with a fake transport and verifies a sensitive transcript, amount, destination and contact-like fields do not appear. Initial expected session hash was wrong and was corrected after the failing assertion showed the actual hash. The managed sandbox currently hangs on FastAPI `TestClient` local ASGI calls, including a minimal app, so TestClient-based checks were run with normal execution permissions.
+
+Actual final checks:
+- `python -m pytest tests/test_telemetry_privacy.py -q -p no:cacheprovider`: 2 passed, 2 deprecation warnings.
+- `python -m pytest -q -p no:cacheprovider`: 242 passed / 245 collected, 3 optional integration skips, 2 deprecation warnings.
+- `node --test tests/review_ui.test.cjs`: 1 passed / 1 test; `node --check callgate/demo/review-ui.js` passed.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts / 30 correlated families, manifests/schema verified, no CallGate predictions run.
+- Actual launcher smoke with automatic loopback ports: fetched participant page and verified the checkout-skin text. The first smoke attempt inside the managed sandbox failed with `PermissionError: [Errno 1] Operation not permitted` when creating a socket; reran with normal execution permissions and stopped all spawned processes.
+- `git diff --check`: passed.
+
+Remaining for this increment: PR publication. No real Sentry project trace/screenshot, Session Replay, or observability-driven performance fix has been recorded yet; do not claim one until it exists.

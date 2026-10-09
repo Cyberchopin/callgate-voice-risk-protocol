@@ -25,6 +25,7 @@ from .assemblyai import stream_pcm
 from .live_metrics import LiveMetrics
 from .workflow import ChallengeRateLimited
 from .models import StrictModel, Transcript
+from .sentry_observability import configure_sentry, log_security, trace_step
 
 ASSETS = Path(__file__).parent / 'demo'
 
@@ -115,7 +116,7 @@ def configured_asr_rate():
 
 
 def create_broker_app(workflow, participant_token, reviewer_token, *, origin='http://127.0.0.1:8766',
-                      metrics_database=None, reviewer_identity=None):
+                      metrics_database=None, reviewer_identity=None, telemetry_transport=None):
     if not isinstance(participant_token, str) or not participant_token:
         raise ValueError('distinct role credentials required')
     if isinstance(reviewer_token, dict):
@@ -132,6 +133,7 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
     if len(workflow.contact_identities()) > 1 and None in reviewer_routes:
         raise ValueError('explicit reviewer route identity required')
     app = guarded_app(origin, 'participant.html')
+    configure_sentry(transport=telemetry_transport)
     live_metrics = LiveMetrics(database=metrics_database)
     receipt_key = Ed25519PrivateKey.generate()
     receipt_public = receipt_key.public_key().public_bytes(
@@ -203,8 +205,14 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
     @app.post('/api/transcript', dependencies=[Depends(participant)])
     def ingest(body: Transcript):
         try:
-            return workflow.ingest(body)
+            with trace_step('transcript_to_evidence', **workflow.telemetry_context()):
+                result = workflow.ingest(body)
+            log_security('policy_decision', policy_state=result['state'],
+                         **workflow.telemetry_context())
+            return result
         except ValueError:
+            log_security('policy_decision_rejected', error_code='TRANSCRIPT_REJECTED',
+                         **workflow.telemetry_context())
             raise HTTPException(409, 'transcript rejected') from None
 
     @app.websocket('/api/audio')
@@ -272,8 +280,11 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
                 segment = segment.model_copy(
                     update={'segment_id': ingress_prefix + '-' + segment.segment_id})
                 risk_started = time.perf_counter()
-                result = workflow.ingest(segment, generation=generation)
+                with trace_step('transcript_to_evidence', **workflow.telemetry_context()):
+                    result = workflow.ingest(segment, generation=generation)
                 risk_ms = (time.perf_counter() - risk_started) * 1000
+                log_security('policy_decision', policy_state=result['state'],
+                             **workflow.telemetry_context())
                 elapsed_ms = (time.perf_counter() - started) * 1000
                 audio_ms = audio_bytes / 32
                 proxy = None
@@ -356,6 +367,8 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
     def protected_action(body: Operation):
         # This direct path has no authorization capability. The only execution
         # path remains verified reviewer completion under trusted orchestration.
+        log_security('gateway_refused', error_code='POLICY_PROOF_REQUIRED',
+                     **workflow.telemetry_context())
         raise HTTPException(403, detail={
             'code': 'POLICY_PROOF_REQUIRED',
             'message': 'Direct speech or participant input cannot authorize an action.',
@@ -367,11 +380,18 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
         if any(not task.done() for task in active_audio):
             raise HTTPException(409, 'finish audio before requesting confirmation')
         try:
-            return workflow.request_confirmation(**body.model_dump())
+            with trace_step('challenge_request', **workflow.telemetry_context()):
+                result = workflow.request_confirmation(**body.model_dump())
+            log_security('challenge_created', **workflow.telemetry_context())
+            return result
         except ChallengeRateLimited as error:
+            log_security('challenge_rate_limited', error_code='RATE_LIMITED',
+                         **workflow.telemetry_context())
             raise HTTPException(429, 'challenge issuance rate exceeded',
                                 headers={'Retry-After': str(error.retry_after)}) from None
         except ValueError:
+            log_security('challenge_refused', error_code='POLICY_PREVENTS_CONFIRMATION',
+                         **workflow.telemetry_context())
             raise HTTPException(409, 'policy prevents confirmation') from None
 
     @app.get('/api/contacts', dependencies=[Depends(participant)])
@@ -390,12 +410,20 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
     @app.post('/api/review/decision')
     async def decision(body: SubmittedDecision, principal=Depends(reviewer)):
         if principal is not None and body.decision.request.reviewer != principal:
+            log_security('review_decision_refused', error_code='WRONG_REVIEWER',
+                         **workflow.telemetry_context())
             raise HTTPException(409, 'request belongs to another saved contact')
         if any(not task.done() for task in active_audio):
             raise HTTPException(409, 'finish audio before deciding')
         try:
-            return workflow.complete(body.decision, challenge_response=body.challenge_response)
+            with trace_step('reviewer_decision', **workflow.telemetry_context()):
+                result = workflow.complete(body.decision, challenge_response=body.challenge_response)
+            log_security('gateway_result', outcome_status=result.get('status'),
+                         **workflow.telemetry_context())
+            return result
         except ValueError:
+            log_security('review_decision_refused', error_code='INVALID_OR_STALE_CONFIRMATION',
+                         **workflow.telemetry_context())
             raise HTTPException(409, 'confirmation invalid, stale, expired or already used') from None
 
     return app

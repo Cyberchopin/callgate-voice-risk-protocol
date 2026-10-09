@@ -54,6 +54,13 @@ class DemoWorkflow:
                     'authorization_denied': self._authorization_denied,
                     'outcome': None if self._outcome is None else dict(self._outcome)}
 
+    def telemetry_context(self):
+        """Privacy-bounded identifiers for observability, never transcript text."""
+        with self._lock:
+            return {'session_id': self._session, 'risk_state': self._conversation.state,
+                    'pending': self._pending is not None,
+                    'authorization_denied': self._authorization_denied}
+
     def set_processing_consent(self, granted):
         """Apply an explicit per-session processing choice.
 

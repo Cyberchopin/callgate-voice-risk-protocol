@@ -101,6 +101,8 @@ The launcher now provisions a synthetic saved identity, `saved-family`. Click **
 
 To rehearse separate family and bank contacts, repeat `--contact-identity saved-family --contact-identity saved-bank` when starting the launcher. Each contact receives a labeled reviewer entry, separate signing key and scoped capability; requests are visible only to their registered addressee. This remains a local synthetic enrollment demo.
 
+The participant page is now framed as an AI assistant checkout surface. The checkout UI is a thin demo skin over the same protected-action, challenge and reviewer paths; it does not add a shopping agent, connect to a merchant or use any payment-network brand. It is labeled as simulated and no real payment can occur.
+
 1. In the participant view, consent to processing fictional test content.
 2. Submit “Move your savings into the secure holding wallet.” Stop recording before requesting confirmation.
 3. Review the fictional amount and destination, then generate a one-time challenge.
@@ -170,6 +172,12 @@ The direct protected-action endpoint rejects participant input with `POLICY_PROO
 - **Consent is a product control.** Withdrawal cancels local provider tasks; it does not delete data already sent to the speech provider or establish legal consent from every speaker.
 
 The local prototype has a trusted-startup saved-contact directory and rejects matching initiator/contact credential origins. It has no independently verified contact enrollment, production tenant isolation, trusted remote deployment or enforcement over real tools. Different configured origins do not prove different humans; an operator holding both role URLs can still approve. Do not expose the demo publicly.
+
+### Optional Sentry observability
+
+Set `CALLGATE_SENTRY_DSN` to enable optional Sentry instrumentation. Without that environment variable, the demo runs with no outbound observability. The code emits privacy-bounded trace/log records for transcript-to-evidence parsing, policy decisions, challenge creation, reviewer decisions and gateway refusals. These records keep session hashes, state names, event types, durations and error codes; transcript text, plain amounts, destinations and contact identities are filtered before any external event is emitted.
+
+Install the optional dependency with `pip install '.[observability]'` in an environment where you intend to send Sentry telemetry. The DSN must stay in the environment and must not be committed. Tests use a fake transport to prove sensitive transcript and checkout fields are absent from emitted records.
 
 <details>
 <summary><strong>Receipt verification and measurement retention</strong></summary>
