@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import json
 import statistics
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -159,6 +160,8 @@ def render_markdown(report: dict) -> str:
             f"{item['verification_ms_p95']} |")
     lines += [
         "",
+        "![Safety-utility chart](safety_utility.svg)",
+        "",
         "Wilson intervals are included in the JSON for descriptive proportions only.",
         "Reviewer timing is a synthetic parameter, not measured human response time.",
         "Deny-all has no unauthorized execution in this rehearsal, but also no legitimate completion.",
@@ -167,11 +170,86 @@ def render_markdown(report: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_svg(report: dict) -> str:
+    width, height = 900, 520
+    left, top, plot = 110, 70, 340
+    bottom = top + plot
+    colors = {"deny_all": "#6b7280", "unguarded_checkout": "#b45309", "callgate": "#166534"}
+    labels = {
+        "deny_all": "deny-all",
+        "unguarded_checkout": "unguarded",
+        "callgate": "CallGate",
+    }
+
+    def x(value):
+        return left + value * plot
+
+    def y(value):
+        return bottom - value * plot
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        'aria-labelledby="title desc">',
+        '<title id="title">Checkout safety and utility rehearsal</title>',
+        '<desc id="desc">Synthetic comparison of legitimate completion and false execution.</desc>',
+        '<rect width="100%" height="100%" fill="#ffffff"/>',
+        f'<rect x="{left}" y="{top}" width="{plot}" height="{plot}" fill="#f8fafc" '
+        'stroke="#cbd5e1"/>',
+        f'<line x1="{left}" y1="{bottom}" x2="{left + plot}" y2="{bottom}" stroke="#0f172a"/>',
+        f'<line x1="{left}" y1="{bottom}" x2="{left}" y2="{top}" stroke="#0f172a"/>',
+        f'<text x="{left + plot / 2}" y="{height - 38}" text-anchor="middle" '
+        'font-family="system-ui, sans-serif" font-size="18">Legitimate checkout completion</text>',
+        f'<text x="28" y="{top + plot / 2}" transform="rotate(-90 28 {top + plot / 2})" '
+        'text-anchor="middle" font-family="system-ui, sans-serif" font-size="18">'
+        'False execution</text>',
+        f'<text x="{left}" y="{bottom + 28}" text-anchor="middle" '
+        'font-family="system-ui, sans-serif" font-size="14">0%</text>',
+        f'<text x="{left + plot}" y="{bottom + 28}" text-anchor="middle" '
+        'font-family="system-ui, sans-serif" font-size="14">100%</text>',
+        f'<text x="{left - 18}" y="{bottom + 5}" text-anchor="end" '
+        'font-family="system-ui, sans-serif" font-size="14">0%</text>',
+        f'<text x="{left - 18}" y="{top + 5}" text-anchor="end" '
+        'font-family="system-ui, sans-serif" font-size="14">100%</text>',
+        f'<text x="{left + plot + 38}" y="{top + 18}" font-family="system-ui, sans-serif" '
+        'font-size="13" fill="#475569">unsafe</text>',
+        f'<text x="{left + plot + 38}" y="{bottom}" font-family="system-ui, sans-serif" '
+        'font-size="13" fill="#475569">useful and gated</text>',
+    ]
+    for system in report["systems"]:
+        summary = report["summary"][system]
+        false_execute = summary["false_execute"]
+        utility = summary["legitimate_completion"]
+        px = x(utility["value"])
+        py = y(false_execute["value"])
+        label = labels[system]
+        color = colors[system]
+        point = (f"{label}: false execute {false_execute['numerator']}/"
+                 f"{false_execute['denominator']}; legitimate completion "
+                 f"{utility['numerator']}/{utility['denominator']}")
+        parts += [
+            f'<circle cx="{px:.1f}" cy="{py:.1f}" r="8" fill="{color}"/>',
+            f'<text x="{px + 14:.1f}" y="{py - 10:.1f}" font-family="system-ui, sans-serif" '
+            f'font-size="15" font-weight="700" fill="{color}">{escape(label)}</text>',
+            f'<text x="{px + 14:.1f}" y="{py + 10:.1f}" font-family="system-ui, sans-serif" '
+            f'font-size="13" fill="#334155">{escape(point)}</text>',
+        ]
+    parts += [
+        '<text x="110" y="32" font-family="system-ui, sans-serif" font-size="22" '
+        'font-weight="700" fill="#0f172a">Synthetic checkout safety-utility rehearsal</text>',
+        '<text x="110" y="54" font-family="system-ui, sans-serif" font-size="14" '
+        'fill="#475569">Author-written scenarios; no real payments or human timing.</text>',
+        '</svg>',
+    ]
+    return "\n".join(parts) + "\n"
+
+
 def main() -> int:
     report = run()
     ROOT.mkdir(exist_ok=True)
     (ROOT / "results.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     (ROOT / "REPORT.md").write_text(render_markdown(report))
+    (ROOT / "safety_utility.svg").write_text(render_svg(report))
     print(json.dumps({"scenario_count": report["scenario_count"],
                       "systems": report["systems"],
                       "results": {k: {

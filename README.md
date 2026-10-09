@@ -126,8 +126,10 @@ For the checkout story, run `python -m evaluation_checkout.run` to generate a
 small safety-utility rehearsal. It compares deny-all, unguarded checkout and the
 CallGate simulated approval path, with raw counts in
 `evaluation_checkout/results.json` and a short table in
-`evaluation_checkout/REPORT.md`. This is synthetic and author-provided; it is
-not a real shopping metric or independent evaluation.
+`evaluation_checkout/REPORT.md`. The same command also writes
+`evaluation_checkout/safety_utility.svg` for a pitch slide. This is synthetic
+and author-provided; it is not a real shopping metric or independent
+evaluation.
 
 | Metric | CallGate | Keyword baseline |
 | :--- | ---: | ---: |

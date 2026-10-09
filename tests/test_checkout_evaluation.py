@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from evaluation_checkout.run import SCENARIOS, render_markdown, run
+from evaluation_checkout.run import SCENARIOS, render_markdown, render_svg, run
 
 
 def test_checkout_rehearsal_reports_raw_safety_and_utility_denominators():
@@ -25,15 +25,27 @@ def test_checkout_rehearsal_reports_raw_safety_and_utility_denominators():
 def test_checkout_report_keeps_disclosure_and_baseline_comparison():
     text = render_markdown(run())
     assert "Synthetic author-provided checkout rehearsal" in text
+    assert "safety_utility.svg" in text
     assert "deny_all | 0/3" in text
     assert "callgate | 0/3" in text
     assert "3/3" in text
     assert "not measured human response time" in text
 
 
+def test_checkout_svg_uses_generated_raw_counts():
+    svg = render_svg(run())
+    assert "<svg" in svg
+    assert "CallGate: false execute 0/3; legitimate completion 3/3" in svg
+    assert "deny-all: false execute 0/3; legitimate completion 0/3" in svg
+    assert "unguarded: false execute 3/3; legitimate completion 3/3" in svg
+    assert "Author-written scenarios" in svg
+
+
 def test_committed_checkout_results_match_regenerated_report():
     report_path = Path("evaluation_checkout/results.json")
     markdown_path = Path("evaluation_checkout/REPORT.md")
-    if report_path.exists() and markdown_path.exists():
+    svg_path = Path("evaluation_checkout/safety_utility.svg")
+    if report_path.exists() and markdown_path.exists() and svg_path.exists():
         assert "callgate-checkout-utility-v1" in report_path.read_text()
         assert markdown_path.read_text() == render_markdown(run())
+        assert svg_path.read_text() == render_svg(run())
