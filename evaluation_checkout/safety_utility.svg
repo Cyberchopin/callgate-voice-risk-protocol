@@ -12,16 +12,25 @@
 <text x="92" y="415" text-anchor="end" font-family="system-ui, sans-serif" font-size="14">0%</text>
 <text x="92" y="75" text-anchor="end" font-family="system-ui, sans-serif" font-size="14">100%</text>
 <text x="488" y="88" font-family="system-ui, sans-serif" font-size="13" fill="#475569">unsafe</text>
-<text x="488" y="410" font-family="system-ui, sans-serif" font-size="13" fill="#475569">useful and gated</text>
+<text x="488" y="410" font-family="system-ui, sans-serif" font-size="13" fill="#475569">useful and safer</text>
 <circle cx="110.0" cy="410.0" r="8" fill="#6b7280"/>
 <text x="124.0" y="400.0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" fill="#6b7280">deny-all</text>
 <text x="124.0" y="420.0" font-family="system-ui, sans-serif" font-size="13" fill="#334155">deny-all: false execute 0/3; legitimate completion 0/3</text>
 <circle cx="450.0" cy="70.0" r="8" fill="#b45309"/>
 <text x="464.0" y="60.0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" fill="#b45309">unguarded</text>
 <text x="464.0" y="80.0" font-family="system-ui, sans-serif" font-size="13" fill="#334155">unguarded: false execute 3/3; legitimate completion 3/3</text>
+<circle cx="450.0" cy="70.0" r="8" fill="#dc2626"/>
+<text x="464.0" y="60.0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" fill="#dc2626">OTP step-up</text>
+<text x="464.0" y="80.0" font-family="system-ui, sans-serif" font-size="13" fill="#334155">OTP step-up: false execute 3/3; legitimate completion 3/3</text>
 <circle cx="450.0" cy="410.0" r="8" fill="#166534"/>
-<text x="464.0" y="400.0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" fill="#166534">CallGate</text>
-<text x="464.0" y="420.0" font-family="system-ui, sans-serif" font-size="13" fill="#334155">CallGate: false execute 0/3; legitimate completion 3/3</text>
+<text x="464.0" y="400.0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" fill="#166534">CallGate p=1.0</text>
+<text x="464.0" y="420.0" font-family="system-ui, sans-serif" font-size="13" fill="#334155">CallGate p=1.0: false execute 0/3; legitimate completion 3/3</text>
+<circle cx="336.7" cy="410.0" r="8" fill="#15803d"/>
+<text x="350.7" y="400.0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" fill="#15803d">CallGate p=0.67</text>
+<text x="350.7" y="420.0" font-family="system-ui, sans-serif" font-size="13" fill="#334155">CallGate p=0.67: false execute 0/3; legitimate completion 2/3</text>
+<circle cx="336.7" cy="410.0" r="8" fill="#65a30d"/>
+<text x="350.7" y="400.0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" fill="#65a30d">CallGate slow</text>
+<text x="350.7" y="440.0" font-family="system-ui, sans-serif" font-size="13" fill="#334155">CallGate slow: false execute 0/3; legitimate completion 2/3</text>
 <text x="110" y="32" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#0f172a">Synthetic checkout safety-utility rehearsal</text>
 <text x="110" y="54" font-family="system-ui, sans-serif" font-size="14" fill="#475569">Author-written scenarios; no real payments or human timing.</text>
 </svg>

@@ -22,7 +22,10 @@ The script writes:
 |---|---|
 | `deny_all` | Never completes a protected checkout. |
 | `unguarded_checkout` | Completes every protected checkout attempt. |
-| `callgate` | Uses the existing transcript, policy, challenge, reviewer signature and simulated gate path. |
+| `otp_step_up` | Completes every checkout when the user relays a code; in coerced calls the attacker receives the OTP. |
+| `callgate_p100_fast` | Uses the existing transcript, policy, challenge, reviewer signature and simulated gate path with all contacts available. |
+| `callgate_p67_observed` | Same CallGate path, but one legitimate contact is unavailable. |
+| `callgate_p67_slow` | Same availability as `callgate_p67_observed`, with slower response latency. |
 
 ## What the current result shows
 
@@ -31,11 +34,13 @@ unauthorized simulated execution while completing no legitimate checkout. It
 also makes the unguarded checkout tradeoff visible: it completes legitimate
 requests but also completes unauthorized ones.
 
-CallGate's result in this rehearsal depends on the synthetic scenario design
-and simulated reviewer responses. It demonstrates that the same protected path
-can complete a legitimate, reviewer-approved checkout while refusing scam-like
-or blocked cases. It does not prove real consumer conversion, real fraud
-prevention, or real contact response timing.
+CallGate's result in this rehearsal depends on the synthetic scenario design,
+simulated reviewer responses, contact availability and delay parameters. It
+demonstrates that the same protected path can complete a legitimate,
+reviewer-approved checkout while refusing scam-like or blocked cases. It also
+shows conversion loss when a trusted contact is unavailable. It does not prove
+real consumer conversion, real fraud prevention, or real contact response
+timing.
 
 ## Allowed pitch wording
 
@@ -52,3 +57,4 @@ the generated JSON, not from hand-entered slide numbers."
 - Do not claim the numbers are real-world accuracy.
 - Do not claim independent labels or human-response measurements.
 - Do not compare this author-written rehearsal to the frozen v1 voice-risk pilot.
+- Do not hide that CallGate utility depends on contact availability and response delay.

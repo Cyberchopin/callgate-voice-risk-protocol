@@ -199,3 +199,35 @@ Actual final checks:
 - `git diff --check`: passed.
 
 Remaining for this increment: PR publication. The SVG is generated from synthetic rehearsal counts and must not be presented as a new measurement.
+
+## 2026-10-09 — OTP coercion baseline and honest checkout utility loss
+
+Owner pointed out seven claim risks before the next PR: safety monotonicity must have randomized property tests before README claims it; contact challenge tests need counted evidence; Sentry privacy tests must capture all outbound telemetry; local multi-contact keys do not prove independent humans; checkout utility was too clean without contact availability and delay; deny-all/unguarded were weak baselines without OTP step-up; and the figure must not hide that risk blocking is scripted.
+
+Fetched remote main and confirmed the generated-figure increment was squash-merged as `1fd99dd`. Continued on `feat/otp-coercion-checkout-eval`.
+
+Implemented an OTP step-up baseline and CallGate contact-availability/latency variants in `evaluation_checkout/run.py`. The OTP baseline completes every checkout, but unauthorized pressure scenarios are counted as false execution because the scripted victim relays the OTP to the attacker. CallGate is now reported as `callgate_p100_fast`, `callgate_p67_observed`, and `callgate_p67_slow`; the two p=0.67 variants model one unavailable legitimate contact, and the slow variant multiplies response latency. Regenerated `evaluation_checkout/results.json`, `evaluation_checkout/REPORT.md`, and `evaluation_checkout/safety_utility.svg`.
+
+Updated docs to keep the claim honest: README now names the OTP coercion baseline and contact availability/delay parameters; the role-separation boundary explicitly says the multi-contact launcher still runs on one host under one operator's control, so one person controlling all processes can self-approve. `docs/COMMERCE_IMPACT_REHEARSAL.md` and `docs/PROJECT_TRUTH.md` now state that these are author-written scripted assumptions, not real human response or commerce telemetry.
+
+Audit evidence requested by owner:
+- Safety monotonicity property test exists in `tests/test_safety_properties.py::test_revisions_duplicates_and_order_do_not_relax_safety`. Actual run: `python -m pytest tests/test_safety_properties.py --hypothesis-show-statistics -q -p no:cacheprovider` -> 1 passed; Hypothesis generated 1000 passing, 0 failing, and 83 invalid test cases. It checks random transcript sequences plus repeated/older revisions do not move to a less restrictive state and never allow protected actions.
+- Contact binding / cross-contact / replay / tamper evidence: `python -m pytest tests/test_contact_binding.py tests/test_multiple_contacts.py tests/test_review_process.py --collect-only -q` collected 35 tests. The collected cases include wrong saved-contact key rejection, same credential origin self-approval rejection, five parameter-scope tamper cases, denied/expired challenge survival across identity and amount changes, duplicate identity rejection, shared key rejection, old decision rejection after amount change, wrong reviewer/addressee rejection, broker route isolation, seven ambiguous/overlapping capability-token startup rejections, superseded identity hiding and old signature invalidation, participant/unknown capability rejection, and two-/three-process routing isolation.
+- Privacy telemetry evidence: `tests/test_telemetry_privacy.py` passes a fake `telemetry_transport=captured.append` into the broker app, captures all emitted records, serializes the entire captured payload, and asserts the known sensitive transcript string `Send 9876543 dollars`, `secret phrase`, amount `9876543`, destination `alice-private-wallet`, contact-like `Alice`, and reviewer token text do not appear. It also checks only sanitized evidence such as `session_hash`, `CHALLENGED`, and `POLICY_PROOF_REQUIRED` remains.
+
+Actual checkout results from `python -m evaluation_checkout.run`: scenario_count=6; `deny_all` false_execute 0/3 and legitimate_completion 0/3; `unguarded_checkout` false_execute 3/3 and legitimate_completion 3/3; `otp_step_up` false_execute 3/3 and legitimate_completion 3/3; `callgate_p100_fast` false_execute 0/3 and legitimate_completion 3/3 with median 24000 ms and p95 30000 ms; `callgate_p67_observed` false_execute 0/3 and legitimate_completion 2/3 with median 21000 ms and p95 24000 ms; `callgate_p67_slow` false_execute 0/3 and legitimate_completion 2/3 with median 84000 ms and p95 96000 ms.
+
+Actual final checks:
+- `python -m evaluation_checkout.run`: regenerated JSON, Markdown and SVG with OTP and contact-availability variants.
+- `python -m pytest tests/test_checkout_evaluation.py -q -p no:cacheprovider`: 4 passed.
+- `python -m pytest tests/test_safety_properties.py --hypothesis-show-statistics -q -p no:cacheprovider`: 1 passed; 1000 passing, 0 failing, 83 invalid Hypothesis cases.
+- `python -m pytest tests/test_contact_binding.py tests/test_multiple_contacts.py tests/test_review_process.py -q -p no:cacheprovider`: 35 passed, 2 warnings.
+- `python -m pytest tests/test_telemetry_privacy.py -q -p no:cacheprovider`: 2 passed, 2 warnings.
+- `python -m pytest -q -p no:cacheprovider`: 246 passed / 249 collected, 3 optional integration skips, 2 warnings.
+- `node --test tests/review_ui.test.cjs`: 1 passed / 1 test.
+- `node --check callgate/demo/review-ui.js`: passed.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts / 30 correlated families, manifests/schema verified, no CallGate predictions run; all slices are small and should not report F1 as validated evidence.
+- `git diff --check`: passed.
+
+Remaining for this increment: PR publication. No real Sentry project trace/screenshot, Session Replay, observability-driven performance fix, real human response data, or real commerce telemetry has been recorded yet.
