@@ -122,6 +122,13 @@ Run `python scripts/start_demo.py` and open `http://127.0.0.1:8765/`. This page 
 
 The first-run result exposes a detection weakness rather than a performance advantage.
 
+For the checkout story, run `python -m evaluation_checkout.run` to generate a
+small safety-utility rehearsal. It compares deny-all, unguarded checkout and the
+CallGate simulated approval path, with raw counts in
+`evaluation_checkout/results.json` and a short table in
+`evaluation_checkout/REPORT.md`. This is synthetic and author-provided; it is
+not a real shopping metric or independent evaluation.
+
 | Metric | CallGate | Keyword baseline |
 | :--- | ---: | ---: |
 | Precision | 100.0% — 1 predicted positive | 40.0% |

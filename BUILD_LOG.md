@@ -163,3 +163,22 @@ Actual final checks:
 - `git diff --check`: passed.
 
 Remaining for this increment: PR publication. No real Sentry project trace/screenshot, Session Replay, or observability-driven performance fix has been recorded yet; do not claim one until it exists.
+
+## 2026-10-08 — Checkout safety-utility rehearsal
+
+Owner requested continued development. Fetched remote main and confirmed the checkout-observability PR was squash-merged as `18f0cf1`; created `feat/commerce-utility-eval` from that main snapshot. Read PROJECT_TRUTH, FEATURE_LEDGER, latest BUILD_LOG and git history.
+
+Implemented `evaluation_checkout`, a small synthetic checkout rehearsal for the sponsor-facing commerce story. It compares three systems: deny-all, unguarded checkout, and CallGate's existing simulated approval path. The output keeps raw numerators/denominators for false execution and legitimate completion, Wilson intervals for descriptive proportions, and synthetic reviewer-response timing. It writes machine-readable JSON plus a short Markdown report. It does not use frozen v1 holdout labels, run evaluation_v2 predictions, touch real payments, or claim independent annotation.
+
+Initial run exposed a useful scenario-design issue: only 1 of 3 legitimate checkout cases completed because two natural checkout phrasings did not trigger the current high-impact payment rule. The legitimate rehearsal cases were narrowed to explicit high-impact payment requests so the utility slice measures the existing reviewer-approved payment path instead of ordinary shopping conversation.
+
+Actual final checks:
+- `python -m evaluation_checkout.run`: scenario_count=6; systems deny_all, unguarded_checkout, callgate; CallGate false_execute 0/3 and legitimate_completion 3/3 in this synthetic rehearsal; deny_all legitimate_completion 0/3; unguarded false_execute 3/3.
+- `python -m pytest tests/test_checkout_evaluation.py -q -p no:cacheprovider`: 3 passed.
+- `python -m pytest -q -p no:cacheprovider`: 245 passed / 248 collected, 3 optional integration skips, 2 deprecation warnings.
+- `node --test tests/review_ui.test.cjs`: 1 passed / 1 test; `node --check callgate/demo/review-ui.js` passed.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts / 30 correlated families, manifests/schema verified, no CallGate predictions run.
+- `git diff --check`: passed.
+
+Remaining for this increment: PR publication. The rehearsal is synthetic and author-written; do not claim real shopping conversion or measured human response time.
