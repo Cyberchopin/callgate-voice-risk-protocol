@@ -123,8 +123,9 @@ Run `python scripts/start_demo.py` and open `http://127.0.0.1:8765/`. This page 
 The first-run result exposes a detection weakness rather than a performance advantage.
 
 For the checkout story, run `python -m evaluation_checkout.run` to generate a
-small safety-utility rehearsal. It compares deny-all, unguarded checkout and the
-CallGate simulated approval path, with raw counts in
+small safety-utility rehearsal. It compares deny-all, unguarded checkout, an
+OTP step-up baseline under live coercion, and CallGate variants with contact
+availability and delay parameters, with raw counts in
 `evaluation_checkout/results.json` and a short table in
 `evaluation_checkout/REPORT.md`. The same command also writes
 `evaluation_checkout/safety_utility.svg` for a pitch slide. This is synthetic
@@ -174,7 +175,7 @@ A deny-all system can also have no unauthorized executions while helping nobody.
 The direct protected-action endpoint rejects participant input with `POLICY_PROOF_REQUIRED`. This by itself is not superiority over deny-all; the separately verified completion path must also work. Reviewer denial now prevents the same committed operation from receiving a new challenge in that session. Resetting a demo session is not a production anti-abuse boundary.
 
 - **Approval is scoped to a simulation.** No bank, payment provider or telephone control is connected.
-- **Role separation is not identity verification.** Someone controlling both entry credentials and the challenge can self-approve. Both processes and their host are trusted.
+- **Role separation is not identity verification.** Someone controlling both entry credentials and the challenge can self-approve. The multi-contact launcher uses separate local processes and keys, but they still run on the same host and under the same operator's control. Both processes and their host are trusted.
 - **Challenges are bounded.** Three incorrect responses cancel a request. Issuance is limited to five per minute and thirty per hour per workflow process; resets and consent changes do not clear that budget, but a process restart does.
 - **Keys and pending approvals are ephemeral.** The demo uses an in-memory replay gate. SQLite replay protection is a separately tested primitive; persistent issuer/reviewer key lifecycle management is not implemented.
 - **Receipts attest to signed content.** They do not prove correct risk judgment or human identity, and they are not operation permissions. Authorization replay rejection is a separate mechanism.

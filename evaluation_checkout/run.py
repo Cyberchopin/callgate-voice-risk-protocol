@@ -32,6 +32,7 @@ class Scenario:
     authorized: bool
     reviewer_approves: bool
     response_ms: int | None
+    contact_available: bool = True
     amount_cents: int = 280000
     destination: str = "campus-repair-checkout"
 
@@ -39,11 +40,21 @@ class Scenario:
 SCENARIOS = [
     Scenario("co-001", "Send 2800 dollars right now for my repair checkout.", True, True, 18000),
     Scenario("co-002", "Send 1900 dollars for the checkout now while I am on the call.", True, True, 24000),
-    Scenario("co-003", "Transfer 3200 dollars for this purchase after a family check.", True, True, 30000),
+    Scenario("co-003", "Transfer 3200 dollars for this purchase after a family check.", True, True, 30000,
+             contact_available=False),
     Scenario("co-004", "Send 2800 dollars right now or your account will be frozen.", False, False, 22000),
     Scenario("co-005", "Do not tell anyone and move your savings into the holding wallet.", False, False, None),
     Scenario("co-006", "Tell me your verification code so I can finish payment.", False, False, None),
 ]
+
+CALLGATE_POLICIES = {
+    "callgate_p100_fast": {"response_probability": 1.0, "latency_multiplier": 1.0,
+                           "force_all_contacts_available": True},
+    "callgate_p67_observed": {"response_probability": 2 / 3, "latency_multiplier": 1.0,
+                              "force_all_contacts_available": False},
+    "callgate_p67_slow": {"response_probability": 2 / 3, "latency_multiplier": 4.0,
+                          "force_all_contacts_available": False},
+}
 
 
 def _proportion(successes: int, total: int) -> dict:
@@ -52,7 +63,8 @@ def _proportion(successes: int, total: int) -> dict:
             "wilson95": wilson(successes, total)}
 
 
-def _workflow_result(scenario: Scenario) -> dict:
+def _workflow_result(scenario: Scenario, policy: dict) -> dict:
+    contact_available = scenario.contact_available or policy["force_all_contacts_available"]
     issuer = Ed25519PrivateKey.generate()
     reviewer = Ed25519PrivateKey.generate()
     clock = [1000]
@@ -74,17 +86,21 @@ def _workflow_result(scenario: Scenario) -> dict:
         refusal_reason = "policy_prevents_confirmation"
         bundle = None
     if bundle is not None:
-        decision = ReviewerDecision(request=bundle["request"], approved=scenario.reviewer_approves,
-            signature=reviewer.sign(
-                decision_bytes(bundle["request"], scenario.reviewer_approves)).hex())
-        try:
-            result = workflow.complete(decision,
-                challenge_response=bundle["out_of_band_challenge"])
-            completion_status = result["status"]
-            completed = completion_status == "simulated_action_completed"
-            verification_ms = scenario.response_ms
-        except ValueError:
-            refusal_reason = "confirmation_failed"
+        if not contact_available:
+            refusal_reason = "contact_unavailable"
+        else:
+            decision = ReviewerDecision(request=bundle["request"], approved=scenario.reviewer_approves,
+                signature=reviewer.sign(
+                    decision_bytes(bundle["request"], scenario.reviewer_approves)).hex())
+            try:
+                result = workflow.complete(decision,
+                    challenge_response=bundle["out_of_band_challenge"])
+                completion_status = result["status"]
+                completed = completion_status == "simulated_action_completed"
+                verification_ms = None if scenario.response_ms is None else int(
+                    scenario.response_ms * policy["latency_multiplier"])
+            except ValueError:
+                refusal_reason = "confirmation_failed"
     return {"state": risk["state"], "completed": completed,
             "completion_status": completion_status, "verification_ms": verification_ms,
             "refusal_reason": refusal_reason}
@@ -101,8 +117,16 @@ def _system_rows() -> list[dict]:
                      "authorized": scenario.authorized, "completed": True,
                      "verification_ms": 0, "state": None,
                      "refusal_reason": None})
-        rows.append({"system": "callgate", "scenario_id": scenario.scenario_id,
-                     "authorized": scenario.authorized, **_workflow_result(scenario)})
+        rows.append({"system": "otp_step_up", "scenario_id": scenario.scenario_id,
+                     "authorized": scenario.authorized, "completed": True,
+                     "verification_ms": 12000, "state": None,
+                     "refusal_reason": None if scenario.authorized else "victim_relayed_otp"})
+        for name, policy in CALLGATE_POLICIES.items():
+            rows.append({"system": name, "scenario_id": scenario.scenario_id,
+                         "authorized": scenario.authorized,
+                         "contact_response_probability": policy["response_probability"],
+                         "latency_multiplier": policy["latency_multiplier"],
+                         **_workflow_result(scenario, policy)})
     return rows
 
 
@@ -132,11 +156,19 @@ def run() -> dict:
     return {
         "schema_version": "callgate-checkout-utility-v1",
         "disclosure": ("Synthetic author-provided checkout rehearsal. No real payments, "
-                       "no independent labels, no population claim."),
+                       "no independent labels, no population claim. Contact availability "
+                       "and latency are scripted parameters."),
         "scenario_count": len(SCENARIOS),
-        "systems": ["deny_all", "unguarded_checkout", "callgate"],
+        "systems": ["deny_all", "unguarded_checkout", "otp_step_up",
+                    "callgate_p100_fast", "callgate_p67_observed", "callgate_p67_slow"],
         "rows": rows,
         "summary": _summaries(rows),
+        "model_parameters": {
+            "otp_step_up": "coerced victim relays OTP in unauthorized pressure scenarios",
+            "callgate_p100_fast": "all contacts respond with scripted fast latency",
+            "callgate_p67_observed": "one legitimate contact is unavailable",
+            "callgate_p67_slow": "same availability as observed; response latency multiplied by 4",
+        },
     }
 
 
@@ -165,7 +197,8 @@ def render_markdown(report: dict) -> str:
         "Wilson intervals are included in the JSON for descriptive proportions only.",
         "Reviewer timing is a synthetic parameter, not measured human response time.",
         "Deny-all has no unauthorized execution in this rehearsal, but also no legitimate completion.",
-        "Unguarded checkout completes every scenario, including unauthorized ones.",
+        "OTP step-up is modeled as failing under live coercion because the victim relays the code.",
+        "CallGate variants model contact availability and delay; lower availability creates conversion loss.",
     ]
     return "\n".join(lines) + "\n"
 
@@ -174,11 +207,16 @@ def render_svg(report: dict) -> str:
     width, height = 900, 520
     left, top, plot = 110, 70, 340
     bottom = top + plot
-    colors = {"deny_all": "#6b7280", "unguarded_checkout": "#b45309", "callgate": "#166534"}
+    colors = {"deny_all": "#6b7280", "unguarded_checkout": "#b45309",
+              "otp_step_up": "#dc2626", "callgate_p100_fast": "#166534",
+              "callgate_p67_observed": "#15803d", "callgate_p67_slow": "#65a30d"}
     labels = {
         "deny_all": "deny-all",
         "unguarded_checkout": "unguarded",
-        "callgate": "CallGate",
+        "otp_step_up": "OTP step-up",
+        "callgate_p100_fast": "CallGate p=1.0",
+        "callgate_p67_observed": "CallGate p=0.67",
+        "callgate_p67_slow": "CallGate slow",
     }
 
     def x(value):
@@ -214,7 +252,7 @@ def render_svg(report: dict) -> str:
         f'<text x="{left + plot + 38}" y="{top + 18}" font-family="system-ui, sans-serif" '
         'font-size="13" fill="#475569">unsafe</text>',
         f'<text x="{left + plot + 38}" y="{bottom}" font-family="system-ui, sans-serif" '
-        'font-size="13" fill="#475569">useful and gated</text>',
+        'font-size="13" fill="#475569">useful and safer</text>',
     ]
     for system in report["systems"]:
         summary = report["summary"][system]
@@ -227,11 +265,12 @@ def render_svg(report: dict) -> str:
         point = (f"{label}: false execute {false_execute['numerator']}/"
                  f"{false_execute['denominator']}; legitimate completion "
                  f"{utility['numerator']}/{utility['denominator']}")
+        y_offset = 10 if system != "callgate_p67_slow" else 30
         parts += [
             f'<circle cx="{px:.1f}" cy="{py:.1f}" r="8" fill="{color}"/>',
             f'<text x="{px + 14:.1f}" y="{py - 10:.1f}" font-family="system-ui, sans-serif" '
             f'font-size="15" font-weight="700" fill="{color}">{escape(label)}</text>',
-            f'<text x="{px + 14:.1f}" y="{py + 10:.1f}" font-family="system-ui, sans-serif" '
+            f'<text x="{px + 14:.1f}" y="{py + y_offset:.1f}" font-family="system-ui, sans-serif" '
             f'font-size="13" fill="#334155">{escape(point)}</text>',
         ]
     parts += [
