@@ -1,0 +1,251 @@
+{
+  "disclosure": "Synthetic author-provided checkout rehearsal. No real payments, no independent labels, no population claim.",
+  "rows": [
+    {
+      "authorized": true,
+      "completed": false,
+      "refusal_reason": "always_denied",
+      "scenario_id": "co-001",
+      "state": null,
+      "system": "deny_all",
+      "verification_ms": null
+    },
+    {
+      "authorized": true,
+      "completed": true,
+      "refusal_reason": null,
+      "scenario_id": "co-001",
+      "state": null,
+      "system": "unguarded_checkout",
+      "verification_ms": 0
+    },
+    {
+      "authorized": true,
+      "completed": true,
+      "completion_status": "simulated_action_completed",
+      "refusal_reason": null,
+      "scenario_id": "co-001",
+      "state": "CHALLENGED",
+      "system": "callgate",
+      "verification_ms": 18000
+    },
+    {
+      "authorized": true,
+      "completed": false,
+      "refusal_reason": "always_denied",
+      "scenario_id": "co-002",
+      "state": null,
+      "system": "deny_all",
+      "verification_ms": null
+    },
+    {
+      "authorized": true,
+      "completed": true,
+      "refusal_reason": null,
+      "scenario_id": "co-002",
+      "state": null,
+      "system": "unguarded_checkout",
+      "verification_ms": 0
+    },
+    {
+      "authorized": true,
+      "completed": true,
+      "completion_status": "simulated_action_completed",
+      "refusal_reason": null,
+      "scenario_id": "co-002",
+      "state": "CHALLENGED",
+      "system": "callgate",
+      "verification_ms": 24000
+    },
+    {
+      "authorized": true,
+      "completed": false,
+      "refusal_reason": "always_denied",
+      "scenario_id": "co-003",
+      "state": null,
+      "system": "deny_all",
+      "verification_ms": null
+    },
+    {
+      "authorized": true,
+      "completed": true,
+      "refusal_reason": null,
+      "scenario_id": "co-003",
+      "state": null,
+      "system": "unguarded_checkout",
+      "verification_ms": 0
+    },
+    {
+      "authorized": true,
+      "completed": true,
+      "completion_status": "simulated_action_completed",
+      "refusal_reason": null,
+      "scenario_id": "co-003",
+      "state": "CHALLENGED",
+      "system": "callgate",
+      "verification_ms": 30000
+    },
+    {
+      "authorized": false,
+      "completed": false,
+      "refusal_reason": "always_denied",
+      "scenario_id": "co-004",
+      "state": null,
+      "system": "deny_all",
+      "verification_ms": null
+    },
+    {
+      "authorized": false,
+      "completed": true,
+      "refusal_reason": null,
+      "scenario_id": "co-004",
+      "state": null,
+      "system": "unguarded_checkout",
+      "verification_ms": 0
+    },
+    {
+      "authorized": false,
+      "completed": false,
+      "completion_status": "reviewer_denied",
+      "refusal_reason": null,
+      "scenario_id": "co-004",
+      "state": "CHALLENGED",
+      "system": "callgate",
+      "verification_ms": 22000
+    },
+    {
+      "authorized": false,
+      "completed": false,
+      "refusal_reason": "always_denied",
+      "scenario_id": "co-005",
+      "state": null,
+      "system": "deny_all",
+      "verification_ms": null
+    },
+    {
+      "authorized": false,
+      "completed": true,
+      "refusal_reason": null,
+      "scenario_id": "co-005",
+      "state": null,
+      "system": "unguarded_checkout",
+      "verification_ms": 0
+    },
+    {
+      "authorized": false,
+      "completed": false,
+      "completion_status": null,
+      "refusal_reason": "policy_prevents_confirmation",
+      "scenario_id": "co-005",
+      "state": "UNVERIFIED",
+      "system": "callgate",
+      "verification_ms": null
+    },
+    {
+      "authorized": false,
+      "completed": false,
+      "refusal_reason": "always_denied",
+      "scenario_id": "co-006",
+      "state": null,
+      "system": "deny_all",
+      "verification_ms": null
+    },
+    {
+      "authorized": false,
+      "completed": true,
+      "refusal_reason": null,
+      "scenario_id": "co-006",
+      "state": null,
+      "system": "unguarded_checkout",
+      "verification_ms": 0
+    },
+    {
+      "authorized": false,
+      "completed": false,
+      "completion_status": null,
+      "refusal_reason": "policy_prevents_confirmation",
+      "scenario_id": "co-006",
+      "state": "BLOCKED",
+      "system": "callgate",
+      "verification_ms": null
+    }
+  ],
+  "scenario_count": 6,
+  "schema_version": "callgate-checkout-utility-v1",
+  "summary": {
+    "callgate": {
+      "false_execute": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": [
+          0,
+          0.5615060804490177
+        ]
+      },
+      "latency_note": "synthetic reviewer response parameter, not human timing",
+      "legitimate_completion": {
+        "denominator": 3,
+        "numerator": 3,
+        "value": 1.0,
+        "wilson95": [
+          0.43849391955098227,
+          1
+        ]
+      },
+      "verification_ms_median": 24000,
+      "verification_ms_p95": 30000
+    },
+    "deny_all": {
+      "false_execute": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": [
+          0,
+          0.5615060804490177
+        ]
+      },
+      "latency_note": "synthetic reviewer response parameter, not human timing",
+      "legitimate_completion": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0,
+        "wilson95": [
+          0,
+          0.5615060804490177
+        ]
+      },
+      "verification_ms_median": null,
+      "verification_ms_p95": null
+    },
+    "unguarded_checkout": {
+      "false_execute": {
+        "denominator": 3,
+        "numerator": 3,
+        "value": 1.0,
+        "wilson95": [
+          0.43849391955098227,
+          1
+        ]
+      },
+      "latency_note": "synthetic reviewer response parameter, not human timing",
+      "legitimate_completion": {
+        "denominator": 3,
+        "numerator": 3,
+        "value": 1.0,
+        "wilson95": [
+          0.43849391955098227,
+          1
+        ]
+      },
+      "verification_ms_median": 0,
+      "verification_ms_p95": 0
+    }
+  },
+  "systems": [
+    "deny_all",
+    "unguarded_checkout",
+    "callgate"
+  ]
+}
