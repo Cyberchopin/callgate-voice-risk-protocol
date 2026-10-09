@@ -42,6 +42,8 @@ Multiple-contact increment merged as `7405a36`. Current follow-up adds a simulat
 
 Checkout-observability increment merged as `18f0cf1`. Current follow-up adds a controlled checkout safety-utility rehearsal comparing deny-all, unguarded checkout and CallGate's existing simulated approval path; BUILT_NOW. Source `evaluation_checkout/run.py`, generated `evaluation_checkout/results.json` and `evaluation_checkout/REPORT.md`, docs in `COMMERCE_IMPACT_REHEARSAL.md`, and tests in `tests/test_checkout_evaluation.py`. This is synthetic author-written evidence, not independent labels or real commerce telemetry.
 
+Commerce rehearsal increment merged as `e176bd0`. Current follow-up adds the generated safety-utility SVG figure from the same checkout rehearsal JSON; BUILT_NOW. Source `evaluation_checkout/run.py`, `evaluation_checkout/safety_utility.svg`, and tests in `tests/test_checkout_evaluation.py`. This is a generated presentation artifact, not a new measurement.
+
 Owner squash-merged the previously pending local increment as `1882e3d` on 2026-10-06. The pending labels above describe the original audit snapshot. Current follow-up adds trusted-startup saved-contact routing and credential-origin checks (`callgate/contacts.py`, `tests/test_contact_binding.py`); BUILT_NOW, not future-event work. Independent human enrollment and remote delivery remain incomplete.
 
 Official URL: https://la-ai-hackathon-2026.devpost.com/rules

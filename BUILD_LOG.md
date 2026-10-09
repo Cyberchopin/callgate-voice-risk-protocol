@@ -182,3 +182,20 @@ Actual final checks:
 - `git diff --check`: passed.
 
 Remaining for this increment: PR publication. The rehearsal is synthetic and author-written; do not claim real shopping conversion or measured human response time.
+
+## 2026-10-08 — Generated checkout safety-utility figure
+
+Owner requested continued development. Fetched remote main and confirmed the checkout safety-utility rehearsal PR was squash-merged as `e176bd0`; created `feat/checkout-safety-utility-figure` from that main snapshot.
+
+Implemented a generated SVG figure for the checkout rehearsal. `python -m evaluation_checkout.run` now writes `evaluation_checkout/safety_utility.svg` in addition to the JSON and Markdown report. The figure plots legitimate checkout completion on the x-axis and false execution on the y-axis using the generated raw counts, not hand-entered slide numbers. The README and commerce rehearsal docs now point to the generated figure. This is a presentation artifact, not a new measurement or real commerce telemetry.
+
+Actual final checks:
+- `python -m evaluation_checkout.run`: regenerated JSON, Markdown and SVG; CallGate false_execute 0/3 and legitimate_completion 3/3 in this synthetic rehearsal.
+- `python -m pytest tests/test_checkout_evaluation.py -q -p no:cacheprovider`: 4 passed.
+- `python -m pytest -q -p no:cacheprovider`: 246 passed / 249 collected, 3 optional integration skips, 2 deprecation warnings.
+- `node --test tests/review_ui.test.cjs`: 1 passed / 1 test; `node --check callgate/demo/review-ui.js` passed.
+- `python scripts/check_claims.py`: registered=31, unresolved_or_inconsistent=0.
+- `python evaluation_v2/verify_inputs.py`: 90 scripts / 30 correlated families, manifests/schema verified, no CallGate predictions run.
+- `git diff --check`: passed.
+
+Remaining for this increment: PR publication. The SVG is generated from synthetic rehearsal counts and must not be presented as a new measurement.

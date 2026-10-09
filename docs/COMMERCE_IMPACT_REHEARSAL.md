@@ -14,6 +14,7 @@ The script writes:
 
 - `evaluation_checkout/results.json`: machine-readable rows, raw numerators and denominators, Wilson intervals for descriptive proportions.
 - `evaluation_checkout/REPORT.md`: short human-readable table.
+- `evaluation_checkout/safety_utility.svg`: two-axis figure for a pitch slide or Devpost screenshot.
 
 ## What it compares
 
@@ -41,6 +42,9 @@ prevention, or real contact response timing.
 "We added a reproducible checkout rehearsal that reports safety and utility
 together, so a deny-all gate cannot look successful just because it blocks
 everything."
+
+"The chart plots false execution against legitimate checkout completion from
+the generated JSON, not from hand-entered slide numbers."
 
 ## Not allowed
 
