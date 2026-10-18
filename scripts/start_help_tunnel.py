@@ -8,7 +8,6 @@ import json
 import os
 from pathlib import Path
 import re
-import secrets
 import socket
 import subprocess
 import time
@@ -21,7 +20,7 @@ def main():
     parser.add_argument('--runtime-dir',type=Path,default=Path('.test-tmp/help-live'))
     parser.add_argument('--ngrok-config',type=Path,default=Path('.test-tmp/device-live/ngrok.yml'))
     parser.add_argument('--ngrok-binary',type=Path,default=Path('.test-tmp/device-live/ngrok'))
-    parser.add_argument('--url',help='A separate available HTTPS domain; never the existing device domain')
+    parser.add_argument('--url',required=True,help='A separate HTTPS domain your account can bind; never the existing device domain')
     args=parser.parse_args();os.umask(0o077)
     runtime=args.runtime_dir.resolve();runtime.mkdir(mode=0o700,parents=True,exist_ok=True)
     opener=build_opener(ProxyHandler({}))
@@ -29,7 +28,7 @@ def main():
         with opener.open(f'http://127.0.0.1:{port}/api/tunnels',timeout=1) as response:
             return json.load(response).get('tunnels',[])
     protected=tunnels(4040)
-    target=args.url or 'https://reach-help-'+secrets.token_hex(5)+'.ngrok.app'
+    target=args.url
     url=urlsplit(target)
     if url.scheme!='https' or not url.netloc or url.username or url.password or url.path not in {'','/'}:
         parser.error('Supply a plain, separate HTTPS endpoint origin.')

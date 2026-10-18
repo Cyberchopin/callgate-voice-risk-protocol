@@ -16,7 +16,7 @@ A local prototype for examining risky voice requests and authorizing a simulated
 
 ## Current Status
 
-The current Reach emergency-help integration and App contract are documented in [REACH_INTEGRATION_HANDOFF](docs/REACH_INTEGRATION_HANDOFF.md). It is independent of the legacy payment verification demo. Device HTTPS ingestion is available in the local operator environment; the separate contact-response HTTPS entry is not yet available. Arduino BLE and the Swift gateway are not yet verified.
+The current Reach emergency-help integration and App contract are documented in [REACH_INTEGRATION_HANDOFF](docs/REACH_INTEGRATION_HANDOFF.md). It is independent of the legacy payment verification demo. Device HTTPS ingestion is available in the local operator environment; a separate temporary contact-response HTTPS entry has also been verified with a labeled local automated test. Arduino BLE and the Swift gateway are not yet verified.
 
 **Research prototype · Author-labeled synthetic pilot · No independent validation**
 
