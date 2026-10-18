@@ -80,3 +80,7 @@ NEW_UI_ONLY: ReachGuard English operator/request/reviewer surfaces; responsive n
 PRE_EXISTING: device inbox authentication, durable deduplication, read-only event storage and the separate CallGate payment demo.
 
 NEW: independent help store and audit, scoped contact accept/unable responses, owner cancellation, read-only Dashboard/status, serialized concurrent actions and separate local role files. These do not require payment policy, amounts or challenge codes. Backend and JavaScript tests use isolated synthetic data. Local service runs on 8783; separate help HTTPS attempt failed with ERR_NGROK_313 and was stopped without changing the original device tunnel. Arduino BLE, Swift gateway, mobile help UI and public help response closure remain unverified. See docs/REACH_INTEGRATION_HANDOFF.md.
+
+## Frozen phone demonstration — observed 2026-10-17 PDT
+
+PRE_EXISTING for this follow-up: independent help state machine, role boundaries, audit and Dashboard; no new security or UI capability added. NEW EVIDENCE: operator-confirmed phone Shortcut trigger and real iPhone contact acceptance, matched by full event_id against the retained device inbox and assigned-contact audit. Event ends b695cd1b; actual receipt, help record and acceptance times are documented in docs/IPHONE_HELP_VERIFICATION_2026-10-17.md. This is phone evidence, expressly not Arduino/BLE/Swift verification. Added recovery handoff and frozen-demo validation gaps in docs/REACH_DEMO_RECOVERY.md. No service restart for handoff, no real emergency dispatch or help-arrival claim.
