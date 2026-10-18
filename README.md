@@ -161,7 +161,7 @@ This regenerates the report and figures from committed first-run calls, labels, 
 
 ```bash
 python -m pytest -q -p no:cacheprovider
-node --test tests/review_ui.test.cjs
+node --test tests/*.test.cjs
 ```
 
 Recorded local checks: **184 Python tests and 3 Node logic tests passed**. These counts do not establish real-world accuracy or a green remote CI run. Check [GitHub Actions](https://github.com/Cyberchopin/CallGate_PreHackathon_Research/actions) for remote execution status.
