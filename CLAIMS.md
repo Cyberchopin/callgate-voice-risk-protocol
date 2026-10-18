@@ -312,6 +312,62 @@ Run `python scripts/check_claims.py`. Numeric sentence changes, unregistered dig
     "check": "nonmetric_reference",
     "reason": "Prospective evaluation folder name, no performance metric.",
     "references": []
+  },
+  {
+    "id": "readme-032",
+    "quote": "### UCLA onsite device integration (2026-10-17)",
+    "check": "nonmetric_reference",
+    "reason": "Onsite attribution date, not a measurement or independently verified event-eligibility claim.",
+    "references": [
+      "FEATURE_LEDGER.md",
+      "docs/DEVICE_EVENTS.md"
+    ]
+  },
+  {
+    "id": "readme-033",
+    "quote": "The independent [device intent inbox](docs/DEVICE_EVENTS.md) receives authenticated wearable/iPhone `verify_request` and `help_request` events on loopback port 8780. It includes persistent event-id deduplication and a separate read-only dashboard. It does not grant payment authority or expose the participant/reviewer demo. HTTPS tunnel instructions are prepared; no deployment is implied. Attribution is recorded separately in `FEATURE_LEDGER.md`.",
+    "check": "source_literals",
+    "sources": [
+      {
+        "path": "scripts/start_device_events.py",
+        "literals": [
+          "host=\"127.0.0.1\"",
+          "port=8780"
+        ]
+      },
+      {
+        "path": "callgate/device_events.py",
+        "literals": [
+          "Literal[\"verify_request\", \"help_request\"]",
+          "hmac.compare_digest(value, token)",
+          "hmac.compare_digest(value, viewer_token)",
+          "event_id TEXT PRIMARY KEY",
+          "INSERT OR IGNORE INTO device_events",
+          "\"intent_only\": True",
+          "FastAPI(docs_url=None, redoc_url=None, openapi_url=None)"
+        ]
+      },
+      {
+        "path": "tests/test_device_events.py",
+        "literals": [
+          "def test_persistent_idempotency_and_conflicts(inbox):",
+          "def test_auth_and_route_isolation(inbox):",
+          "def test_concurrent_retries(inbox):"
+        ]
+      },
+      {
+        "path": "docs/DEVICE_EVENTS.md",
+        "literals": [
+          "cloudflared tunnel --url http://127.0.0.1:8780"
+        ]
+      },
+      {
+        "path": "FEATURE_LEDGER.md",
+        "literals": [
+          "## UCLA onsite increment — 2026-10-17"
+        ]
+      }
+    ]
   }
 ]
 ```

@@ -16,6 +16,8 @@ A local prototype for examining risky voice requests and authorizing a simulated
 
 ## Current Status
 
+The current Reach emergency-help integration and App contract are documented in [REACH_INTEGRATION_HANDOFF](docs/REACH_INTEGRATION_HANDOFF.md). It is independent of the legacy payment verification demo. Device HTTPS ingestion is available in the local operator environment; the separate contact-response HTTPS entry is not yet available. Arduino BLE and the Swift gateway are not yet verified.
+
 **Research prototype · Author-labeled synthetic pilot · No independent validation**
 
 CallGate connects live transcription, a deterministic risk policy, evidence inspection, and a separate reviewer flow. It cannot control a phone call or block a real bank transfer. Risk decisions do not use an LLM.
@@ -159,7 +161,7 @@ This regenerates the report and figures from committed first-run calls, labels, 
 
 ```bash
 python -m pytest -q -p no:cacheprovider
-node --test tests/review_ui.test.cjs
+node --test tests/*.test.cjs
 ```
 
 Recorded local checks: **184 Python tests and 3 Node logic tests passed**. These counts do not establish real-world accuracy or a green remote CI run. Check [GitHub Actions](https://github.com/Cyberchopin/CallGate_PreHackathon_Research/actions) for remote execution status.
@@ -232,3 +234,11 @@ CallGate contributes revision-aware evidence handling, cross-turn risk rules, sc
 ## License
 
 [MIT](LICENSE). Reused libraries and models retain their respective licenses and attribution.
+
+### UCLA onsite device integration (2026-10-17)
+
+The independent [device intent inbox](docs/DEVICE_EVENTS.md) receives authenticated wearable/iPhone `verify_request` and `help_request` events on loopback port 8780. It includes persistent event-id deduplication and a separate read-only dashboard. It does not grant payment authority or expose the participant/reviewer demo. HTTPS tunnel instructions are prepared; no deployment is implied. Attribution is recorded separately in `FEATURE_LEDGER.md`.
+
+The optional [local device-to-workflow fusion demo](docs/DEVICE_FUSION.md) adds explicit session/contact/simulated-operation binding and a factual verification timeline in a separate local instance. It reads the device inbox without changing its service or public tunnel; the fusion and reviewer routes remain local.
+
+The local integration now has an English **ReachGuard** presentation: “Reach someone you trust. Before you act.” See the [current operator/contact guide and UI validation](docs/REACHGUARD_UI.md). This is a presentation update over the existing protocol, with clearly simulated actions; it adds no identity, hardware, delivery or payment guarantee. The live device receiver and its existing tunnel remain separate.

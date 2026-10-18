@@ -50,3 +50,33 @@ Owner squash-merged the previously pending local increment as `1882e3d` on 2026-
 
 Official URL: https://la-ai-hackathon-2026.devpost.com/rules
 Accessed 2026-10-05. Pre-existing open source is allowed; only clearly disclosed new event features are judged. The page also contains an April deadline inconsistent with the October event header. Confirm final timing with organizers; do not invent an exact coding duration.
+
+## UCLA onsite increment — 2026-10-17
+
+Per operator's onsite context, existing text/AssemblyAI demos, saved-contact verification and scoped simulated approval predate this increment. New: isolated device intent inbox (`callgate/device_events.py`), loopback launcher on 8780, device-bound Bearer authentication, separate read-only dashboard credential, persistent SQLite event-id deduplication, two intent types, focused tests, and HTTPS tunnel preparation (`docs/DEVICE_EVENTS.md`). No BLE/iPhone implementation, automatic contact delivery, payment authority, public tunnel, deployment or merge is claimed. Exact event eligibility is not independently verified here.
+
+2026-10-17 onsite follow-up: user-authorized device-only temporary tunnel attempted; local inbox running and local real HTTP contract verified. Public edge unreachable on outbound TCP/UDP 7844 (HTTP 530), so remote delivery and actual iPhone/BLE event are not claimed. Exact safety-test dependencies installed; previously omitted property test now passes, full Python 256 passed / 3 skipped. Runtime credentials and processes remain local-only; no existing participant/reviewer service published.
+
+2026-10-17 follow-up: ngrok device-only HTTPS entry now running; public authentication, device binding, persistent deduplication and route isolation verified over real HTTPS. Independent test events cleaned; original inbox retained. This establishes backend public delivery readiness, not actual BLE/iPhone button completion, contact verification completion or payment authorization.
+
+## UCLA onsite local workflow fusion — 2026-10-17
+
+PRE_EXISTING: bilingual monotone policy, processing consent, saved-contact routing, six-digit challenge, independent reviewer signing process, denial latch and scoped simulated execution (`workflow.py`, `confirmation.py`, `review_transport.py`).
+
+NEW_ONSITE: opt-in local fusion operator page and read-only device inbox adapter; explicit binding to this local instance's actual session/device/contact/simulated operation; persistent per-event claims before challenge issuance; policy/session/pending/audio guards; factual event→request→accepted signed response→simulation timeline; separate loopback fusion broker/reviewer on 8781/8782; private role files; integration/UI tests. Sources: `callgate/device_fusion.py`, `callgate/demo/device-fusion.*`, opt-in launcher flags, `tests/test_device_fusion.py`, `tests/device_fusion_ui.test.cjs`.
+
+NOT_CLAIMED: migration of an already-running separate participant session, automatic processing of past events, hardware/iPhone-to-contact human acceptance, real contact enrollment or notification, production crash recovery, payment authority. Existing 8780/ngrok process, origin, credentials and data retained. See `docs/DEVICE_FUSION.md`.
+
+Observed local manual completion (2026-10-17 PDT): operator-approved request `20636a1139e8…` / event `-983168` has all four persisted stages and matching simulated_action_completed workflow outcome, real_action_executed=false. Count only as LOCAL_MANUAL_TEST, expressly excluded from phone/hardware validation. See `docs/LOCAL_MANUAL_VERIFICATION_2026-10-17.md` for exact times and remaining limits.
+
+## ReachGuard English UI/UX — 2026-10-17 onsite presentation increment
+
+PRE_EXISTING: all device receive/auth/idempotency semantics, CallGate policy/consent, contact directory, original challenge/signature/expiry/replay protection, local fusion binding/claims and factual timeline.
+
+NEW_UI_ONLY: ReachGuard English operator/request/reviewer surfaces; responsive navy/white/teal design; progressive configuration, readable evidence and simulated-action summaries, stable event selection, original-expiry countdown and obsolete-code hiding, distinguishable error/denial/expiry/completion states, correct current role links, local CLI opener retaining separate role files, UI unit/browser checks and labeled synthetic screenshots. No new security or hardware-validation capability. 8780/ngrok/API/credentials/data preserved without restart. See docs/REACHGUARD_UI.md for evidence and remaining limits.
+
+## Reach independent help response — onsite follow-up
+
+PRE_EXISTING: device inbox authentication, durable deduplication, read-only event storage and the separate CallGate payment demo.
+
+NEW: independent help store and audit, scoped contact accept/unable responses, owner cancellation, read-only Dashboard/status, serialized concurrent actions and separate local role files. These do not require payment policy, amounts or challenge codes. Backend and JavaScript tests use isolated synthetic data. Local service runs on 8783; separate help HTTPS attempt failed with ERR_NGROK_313 and was stopped without changing the original device tunnel. Arduino BLE, Swift gateway, mobile help UI and public help response closure remain unverified. See docs/REACH_INTEGRATION_HANDOFF.md.

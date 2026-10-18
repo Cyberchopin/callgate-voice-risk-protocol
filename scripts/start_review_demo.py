@@ -58,7 +58,7 @@ def _reviewer(public_pipe, broker_origin, reviewer_origin, reviewer_token, liste
 
 
 def _broker(public_bytes, participant_token, reviewer_token, origin, listener, contact_identity,
-            extra_contacts=()):
+            extra_contacts=(), device_inbox=None, fusion_state=None):
     issuer = Ed25519PrivateKey.generate()
     rows = [dict(identity=contact_identity, reviewer='local-reviewer',
                  public_bytes=public_bytes, token=reviewer_token), *extra_contacts]
@@ -71,7 +71,8 @@ def _broker(public_bytes, participant_token, reviewer_token, origin, listener, c
                             None)
     app = create_broker_app(workflow, participant_token,
         {row['reviewer']:row['token'] for row in rows}, origin=origin,
-        metrics_database=Path(__file__).resolve().parents[1] / 'callgate-metrics.sqlite3')
+        metrics_database=Path(__file__).resolve().parents[1] / 'callgate-metrics.sqlite3',
+        device_inbox=device_inbox, fusion_state=fusion_state)
     uvicorn.Server(uvicorn.Config(app, access_log=False, log_level='warning')).run(sockets=[listener])
 
 
@@ -111,13 +112,27 @@ def main():
     parser.add_argument('--reviewer-port', type=int, default=8767)
     parser.add_argument('--contact-identity', action='append',
         help='Repeat for separate synthetic saved contacts; default saved-family')
+    parser.add_argument('--device-events-db', type=Path,
+        help='Opt in to local fusion page; read-only existing device inbox database')
+    parser.add_argument('--fusion-runtime-dir', type=Path,
+        help='Private local runtime directory for fusion state and role entry files')
     args = parser.parse_args()
+    if bool(args.device_events_db) != bool(args.fusion_runtime_dir):
+        parser.error('device-events-db and fusion-runtime-dir must be supplied together')
+    runtime = args.fusion_runtime_dir
+    if runtime is not None:
+        runtime = runtime.resolve()
+        runtime.mkdir(mode=0o700, parents=True, exist_ok=True)
+        runtime.chmod(0o700)
+        if not args.device_events_db.is_file():
+            parser.error('existing device inbox database required')
+        os.umask(0o077)
     try:
         identities = _contact_ids(args.contact_identity)
     except ValueError as error:
         parser.error(str(error))
     env_path = Path(__file__).resolve().parents[1] / '.env'
-    if env_path.exists() and not os.environ.get('ASSEMBLYAI_API_KEY'):
+    if runtime is None and env_path.exists() and not os.environ.get('ASSEMBLYAI_API_KEY'):
         for line in env_path.read_text(encoding='utf-8-sig').splitlines():
             if line.startswith('ASSEMBLYAI_API_KEY='):
                 os.environ['ASSEMBLYAI_API_KEY'] = line.split('=', 1)[1].strip()
@@ -149,14 +164,25 @@ def main():
                 send.close()
         broker = context.Process(target=_broker,
             args=(rows[0]['public_bytes'], participant_token, rows[0]['token'], broker_origin, sockets[0],
-                  rows[0]['identity'], rows[1:]))
+                  rows[0]['identity'], rows[1:],
+                  None if runtime is None else args.device_events_db.resolve(),
+                  None if runtime is None else runtime / 'fusion.sqlite3'))
         broker.start()
         children.append(broker)
-        # Give users capabilities on their own terminal, never in public files.
-        print('Participant: ' + broker_origin + '/#token=' + participant_token, flush=True)
-        for row in rows:
-            print('Reviewer [' + row['identity'] + '] (keep separate): ' + row['origin'] +
-                  '/#token=' + row['token'], flush=True)
+        if runtime is None:
+            # Existing launcher behavior; capabilities remain in user's own terminal.
+            print('Participant: ' + broker_origin + '/#token=' + participant_token, flush=True)
+            for row in rows:
+                print('Reviewer [' + row['identity'] + '] (keep separate): ' + row['origin'] +
+                      '/#token=' + row['token'], flush=True)
+        else:
+            (runtime / 'operator.token').write_text(participant_token)
+            (runtime / 'participant-link.txt').write_text(broker_origin + '/#token=' + participant_token)
+            for row in rows:
+                (runtime / ('reviewer-' + row['identity'] + '-link.txt')).write_text(
+                    row['origin'] + '/#token=' + row['token'])
+            print('Local fusion operator: ' + broker_origin + '/fusion', flush=True)
+            print('Private role entry files saved locally; credentials not printed.', flush=True)
         print('Local demo only. Keys expire on restart. Ctrl+C stops all processes.', flush=True)
         print('Synthetic startup enrollment; one operator may still control all roles.', flush=True)
         while all(child.is_alive() for child in children):

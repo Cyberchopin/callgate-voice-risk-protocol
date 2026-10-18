@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 include = ["callgate*"]
 
 [tool.setuptools.package-data]
-callgate = ["demo/*.html", "demo/*.js", "demo/*.css"]
+callgate = ["device_events.html", "demo/*.html", "demo/*.js", "demo/*.css"]
 
 [project.optional-dependencies]
 verification = ["cryptography==46.0.5"]

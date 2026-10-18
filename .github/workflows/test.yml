@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/review_ui.test.cjs
+      - run: node --test tests/*.test.cjs
       - run: python -m callgate.bench
       # Fail closed until every public numeric claim has an evidence binding.
       - run: python scripts/check_claims.py

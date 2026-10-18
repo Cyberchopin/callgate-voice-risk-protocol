@@ -231,3 +231,67 @@ Actual final checks:
 - `git diff --check`: passed.
 
 Remaining for this increment: PR publication. No real Sentry project trace/screenshot, Session Replay, observability-driven performance fix, real human response data, or real commerce telemetry has been recorded yet.
+
+### 2026-10-17 — UCLA onsite device inbox
+
+Operator reports existing text, AssemblyAI and saved-contact demos already working locally. Added a separate loopback device intent receiver + authenticated inbox view, persistent idempotency and device-scoped credentials. Kept existing participant/reviewer services separate. Prepared iPhone HTTP contract and opt-in HTTPS tunnel instructions; no public endpoint started, secrets inspected, deployment, push or merge performed. See `docs/DEVICE_EVENTS.md` and `FEATURE_LEDGER.md` for scope and boundaries.
+
+Validation for this increment: isolated inbox 10 tests passed. Regression run excluding `tests/test_safety_properties.py`: 255 passed, 3 skipped; Node review UI test passed; `git diff --check` passed. Full Python collection was blocked by missing `hypothesis` in the existing virtual environment; dependencies were not changed. TestClient required execution outside the sandbox. No live iPhone or HTTPS tunnel test was performed.
+
+### 2026-10-17 — authorized temporary tunnel attempt and missing property tests
+
+User authorized exposing only device inbox. Started loopback 127.0.0.1:8780 with freshly generated local-only dedicated credentials under ignored mode-700 `.test-tmp/device-live/`. Installed official cloudflared 2026.10.1 locally; started temporary HTTP/2 tunnel with explicit empty config and only origin 8780. URL allocated, but edge connection failed: TCP/UDP 7844 startup checks fail and public POST returns HTTP 530. Public auth/binding/idempotency validation remains incomplete; local real HTTP checks all passed. Processes retained for network change/retry; scoped stop tool provided. No participant/reviewer exposure, push or merge.
+
+Installed exact `requirements-safety.txt` dependencies via uv: hypothesis 6.168.5, sortedcontainers 2.4.0. Property test (1000 examples) passed; focused 11 passed; full Python run 256 passed, 3 skipped, 2 deprecation warnings. This supersedes the previous missing-Hypothesis limitation. Hardware/iPhone end-to-end remains unverified.
+
+### 2026-10-17 — ngrok fallback preparation
+
+Per explicit user instruction, stopped only cloudflared PID 3341 after matching its command line; retained inbox PID 2797, credentials and database. Campus network retained. Installed ngrok 3.39.11 from official Linux standalone download; credential-free bounded diagnostics passed DNS/TCP/TLS/tunnel protocol in us-cal-1. No account config exists; user instructed to configure authtoken locally using hidden-input helper. No token read/printed by assistant, no usable ngrok endpoint or public application checks claimed yet. Prepared bounded-start device-only launcher and smoke checks with independent UUIDs and cleanup limited to this test invocation. No persistent network retries, push or merge.
+
+### 2026-10-17 — ngrok public contract verified
+
+After operator configured authtoken locally, launched ngrok and checked actual upstream exactly http://127.0.0.1:8780. HTTPS endpoint https://device.example.invalid is live. Public checks passed: unauthenticated GET/POST 401, verify/help accepted 201, duplicate 200 preserving event, wrong device_id 403, conflicting ID 409, device cannot read 401, viewer read 200, participant/reviewer/openapi/.env 404. Independent ngrok-check UUIDs cleaned up; original credentials, database and prior records retained. Service and tunnel left running. No authtoken or device/viewer credentials printed; no push/merge. Actual iPhone/BLE button remains for teammate acceptance.
+
+### 2026-10-17 — dashboard route recheck after Windows localhost 404
+
+Verified live PID 2797 command/cwd and ngrok upstream. Existing GET / dashboard returned HTTP 200 text/html with expected title from both WSL localhost and public ngrok HTTPS. Viewer event GET 200 and device event GET 401 on both origins. No restart or data/credential changes. Windows-browser localhost 404 source remains undetermined; direct user to verified HTTPS root dashboard, enter raw viewer.token in the page's password field. Prior Windows localhost reachability assumption is corrected; no claim of Windows loopback forwarding verification.
+
+### 2026-10-17 — isolated local wearable/workflow fusion
+
+Preserved live inbox PID 2797 and ngrok origin/address/credentials/database without restart. Added optional local adapter to original broker and policy workflow; read-only inbox access, explicit actual-session/device/saved-contact/operation binding, persistent event claim before original challenge creation, no pending replacement, original signed reviewer path, and actual-state-only timeline. New local instance on 127.0.0.1:8781 (/fusion), separate reviewer 8782, credentials in ignored `.test-tmp/fusion-live/`; default demos unchanged. No migration of an old separate session; operator starts fresh consented evidence and binds this instance.
+
+Live checks: fusion HTML/JS 200; operator snapshot 200, no credential 401, initially unbound. Original inbox page 200; ngrok still https://device.example.invalid → 127.0.0.1:8780; public /fusion, /api/fusion, /api/review/pending all 404. No test events inserted into current phone inbox, no binding/consent/request automatically performed. Full instructions and explicit limits: docs/DEVICE_FUSION.md. Real teammate BLE/iPhone→local operator→contact response remains unverified. No restart of live services, push or merge.
+
+Final validation for local fusion increment: focused Python integration 15 passed; full Python 271 passed / 3 skipped with 2 existing TestClient deprecation warnings; Node UI 6 passed; diff whitespace checks passed. New local instance left unbound pending explicit operator consent/evidence/binding. No phone inbox test data added.
+
+### 2026-10-17 — fresh manual intent and visible challenge label
+
+At operator request, preserved current bound CHALLENGED session (pending=false) and sent exactly one new local verify_request via 8780 with event_id prefix `local-manual-test-20261017T234509Z-`. Inbox returned 201; fusion reports intent_received and no creation refusal. Did not create a confirmation or reset session. Original credentials, DB, ngrok and processes retained. Frontend previously included challenge in JSON; added an explicit bold local-only challenge label for currently pending request_created records, hidden for invalidated records. Four focused Node UI tests pass using synthetic challenge fixture; no live challenge or credential printed. Actual script/page served from live local app checked without restart.
+
+### 2026-10-17 — reviewer request visibility diagnosis
+
+Observed former manual request no_longer_pending while expires_at was still ~39s in future; context CHALLENGED, pending=false, authorization_denied=false, outcome=null. Cannot attribute this observed disappearance to expiry; original accepted-transcript invalidation reproduces this state, but historical invalidating action is not audited and remains undetermined. Saved reviewer link points to current fusion 8782, authenticated API 200/null, no credential 401. No evidence of wrong saved backend or API failure mapped to null.
+
+Static UI changes without restart: reviewer displays own origin, request ID and contact route; distinguishes credential/network errors from successful empty response; allows replacing cached role credential using same-origin local full reviewer entry in password field. Fusion instructions warn that new transcript invalidates pending. Thirteen Node UI tests pass; added explicit integration regression for pre-expiry transcript invalidation. No credential/challenge printed, no live process reset, no push/merge.
+
+Live follow-up verified: created explicit local-manual-reviewer-check-12668579-8638-4e7c-b683-b31f833964c0 request using current binding, with same session retained. Fusion, broker reviewer route and 8782 reviewer API all returned the same request_id (prefix cd9e8d824798); pending=true, 119 seconds remained at verification. Did not approve or print challenge. Reviewer HTML/JS both 200. Focused Python integration/process tests 18 passed. Match report kept locally in .test-tmp/fusion-live/reviewer-match-check.json. Original live services retained.
+
+### 2026-10-17 PDT — operator-completed local manual verification
+
+Read-only reconciliation confirmed actual completed event `-983168`, request `20636a1139e81f8e31032a9b63ff3ea9966e5cacc02db2248880a84250640883`, matches current workflow outcome. Actual UTC timeline: received 23:52:38.275077; request created 23:57:15.080850; signed approval accepted 23:58:15.011402; simulated result 23:58:15.011423. Result simulated_action_completed, real_action_executed=false, saved-family, fictional-wallet, 100 USD cents. Classified per operator as LOCAL_MANUAL_TEST, excluded from phone/BLE/hardware validation. Earlier local-manual-reviewer-check request did not complete and is not combined with these timestamps. Full record: docs/LOCAL_MANUAL_VERIFICATION_2026-10-17.md. No service or tunnel restarted/stopped; original ngrok origin still 127.0.0.1:8780 and inbox page 200. No secrets printed, no database edits, no push/merge.
+
+### 2026-10-17 PDT — ReachGuard English presentation and UX
+
+Reworked opt-in local fusion operator, participant and reviewer static assets into ReachGuard: “Reach someone you trust. Before you act.” Added navy/warm-white/teal responsive hierarchy, evidence provenance, explicit simulated-action card, fixed event selection, factual timeline, progressive setup/developer details, clear challenge countdown, stale/expired/disconnected-code suppression, distinct contact states, keyboard focus and reduced-motion support. All surfaced product copy is English; protected legacy 8780 diagnostic page left unchanged. Default illustrative text/amount apply only to new input forms; existing session/binding not mutated.
+
+Added local CLI role opener using private existing role files, not a web endpoint: operator uses participant authority, reviewer retains separate capability. No new policy, enrollment, identity, payment, delivery or hardware assurance is claimed. Original protocols and expiry remain authoritative. No new telemetry destinations. No process restart or live event writes during this UI increment; 8780 PID 2797, fusion/reviewer PIDs 5272/5271 and existing ngrok upstream 127.0.0.1:8780 retained.
+
+Validation: full Python 277 passed / 3 skipped (2 existing TestClient warnings), Node UI 21 passed. Optional browser tooling isolated in .test-tmp; required libraries locally extracted after sudo install was unavailable, without system installation. Actual Chromium desktop/mobile acceptance: 11 scenario groups, 10 screenshots, zero page errors, synthetic local fixtures only with all APIs intercepted. Visually inspected waiting/success/denial/expiry and corrected expired badge/disabled controls. Separate real-role browser read-only checks passed, zero mutation requests, no screenshots of real data. Original public root 200, unauthenticated device read 401; public fusion/reviewer routes remain 404. Desktop OS launcher, real Safari/iPhone/BLE and human comprehension/accessibility audit remain unverified. Details: docs/REACHGUARD_UI.md. No credentials/challenges printed, no push/merge/deployment.
+
+### 2026-10-17 PDT — independent Reach help and local publication handoff
+
+Implemented independent help response store/transport, contact and Dashboard pages, separate owner/contact/dashboard permissions, persistent event import/audit, idempotent actions, terminal cancellation and serialized concurrent responses. It reads the original device inbox without modifying its data or API; no payment workflow/policy/challenge is required. Existing payment demo remains local. New runtime provisioning uses random actor identities and preserves existing credentials.
+
+Validation: final full Python suite 292 passed, 3 skipped, 2 existing dependency deprecation warnings; independent help backend tests 15 included. JavaScript 24 tests passed across four files. Synthetic provisioning check verified independent identities and credential retention. Initial sandboxed suite stalled on restricted localhost access; only that pytest was stopped, and the full suite passed with localhost access. Read-only live HTTP checks: inbox, fusion, reviewer, help Dashboard/contact all HTML 200; three help roles returned scoped status 200. Original ngrok still has one endpoint forwarding only to 127.0.0.1:8780. No live help acceptance/cancellation was performed. Earlier payment UI browser checks are recorded separately; independent help mobile visual/interaction testing remains pending.
+
+Separate help HTTPS startup failed with ERR_NGROK_313; only its new agent stopped, original device tunnel retained. Arduino BLE and custom Swift gateway remain unverified. Operator reports Shortcut HTTPS upload completed; local manual payment verification does not count as hardware testing. Handoff: docs/REACH_INTEGRATION_HANDOFF.md. Historical live public domains replaced with placeholders in publishable documentation/tests; runtime files untouched. Known private role values and credential patterns checked without printing values; no runtime databases, private links/configuration or screenshots staged. User requested local commit only; no push or merge attempted.
