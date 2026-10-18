@@ -30,7 +30,7 @@ class DemoWorkflow:
         self._outcome = None
         self._processing_consent = 'NOT_REQUESTED'
         self._generation = 0
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._request_clock = request_clock
         self._issued = deque()
         self._denied_resources = set()
@@ -142,6 +142,22 @@ class DemoWorkflow:
                 return None
             request, operation, _, _ = self._pending
             return {'request': request.model_dump(), 'operation': dict(operation)}
+
+    def binding_context(self):
+        """Local operator snapshot; never exposed by the device inbox."""
+        with self._lock:
+            return {'session_id': self._session, **self.status()}
+
+    def request_bound_confirmation(self, *, session_id, **operation):
+        """Atomic local binding check followed by the original challenge path."""
+        with self._lock:
+            if session_id != self._session:
+                raise ValueError('bound session changed; bind the current session again')
+            if self._processing_consent != 'GRANTED':
+                raise ValueError('processing consent required')
+            if self.status()['pending']:
+                raise ValueError('another confirmation is pending; it will not be replaced')
+            return self.request_confirmation(**operation)
 
     def contact_identities(self):
         return self._coordinator.contact_identities()

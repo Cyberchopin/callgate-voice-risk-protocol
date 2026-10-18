@@ -21,7 +21,7 @@ function harness({allowed=true, media}={}) {
     location:{hash:'',host:'127.0.0.1:8766'},
     sessionStorage:{getItem:()=> 'test-token'},
     URLSearchParams, AbortController,
-    setTimeout:()=>1, clearTimeout(){},
+    setTimeout:()=>1, clearTimeout(){}, setInterval:()=>1, clearInterval(){},
     fetch:async (url, options)=>{
       requests.push([url, options.method]);
       return {ok:true,json:async()=>({processing_allowed:allowed})};
@@ -37,7 +37,7 @@ test('missing consent never opens the physical microphone', async()=>{
   const h=harness({allowed:false});
   await h.el('start-audio').onclick();
   assert.equal(h.captures,0);
-  assert.match(h.el('audio-status').textContent,/允许处理/);
+  assert.match(h.el('audio-status').textContent,/Allow processing/);
 });
 
 for (const action of ['decline','new-session']) {
@@ -51,6 +51,6 @@ for (const action of ['decline','new-session']) {
     await start;
     assert.equal(stopped,1);
     assert.equal(h.contexts,0);
-    assert.equal(h.el('start-audio').disabled,false);
+    assert.equal(h.el('start-audio').disabled,true);
   });
 }

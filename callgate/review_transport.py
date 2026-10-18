@@ -116,7 +116,8 @@ def configured_asr_rate():
 
 
 def create_broker_app(workflow, participant_token, reviewer_token, *, origin='http://127.0.0.1:8766',
-                      metrics_database=None, reviewer_identity=None, telemetry_transport=None):
+                      metrics_database=None, reviewer_identity=None, telemetry_transport=None,
+                      device_inbox=None, fusion_state=None):
     if not isinstance(participant_token, str) or not participant_token:
         raise ValueError('distinct role credentials required')
     if isinstance(reviewer_token, dict):
@@ -418,6 +419,8 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
         try:
             with trace_step('reviewer_decision', **workflow.telemetry_context()):
                 result = workflow.complete(body.decision, challenge_response=body.challenge_response)
+            if hasattr(app.state, 'device_fusion'):
+                app.state.device_fusion.record_completion(body.decision, result)
             log_security('gateway_result', outcome_status=result.get('status'),
                          **workflow.telemetry_context())
             return result
@@ -425,6 +428,11 @@ def create_broker_app(workflow, participant_token, reviewer_token, *, origin='ht
             log_security('review_decision_refused', error_code='INVALID_OR_STALE_CONFIRMATION',
                          **workflow.telemetry_context())
             raise HTTPException(409, 'confirmation invalid, stale, expired or already used') from None
+
+    if device_inbox is not None:
+        from .device_fusion import attach_device_fusion
+        attach_device_fusion(app, workflow, participant_token, device_inbox, fusion_state,
+                             audio_active=lambda: any(not task.done() for task in active_audio))
 
     return app
 

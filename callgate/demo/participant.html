@@ -1,58 +1,23 @@
-<!doctype html>
-<html lang="zh-CN">
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CallGate · AI 结账请求端</title><link rel="stylesheet" href="/review-ui.css">
-<main data-role="participant">
-<h1>CallGate AI 结账请求端</h1>
-<p>AI 助手结账页 → 通话压力检测 → 双人确认 → 模拟付款。不会发生真实支付。</p>
-<section class="checkout"><h2>AI 助手结账</h2>
-<p><strong>助手：</strong>已为你准备好虚构订单 “Campus laptop repair plan”。总价显示在下方。</p>
-<p><strong>用户：</strong>来电方说现在必须付款，否则订单和账户都会出问题。</p>
-<p><strong>CallGate：</strong>付款前需要先看通话风险和已登记联系人核验。</p>
-<p class="fineprint">模拟结账界面；无真实商家、无真实卡号、无真实支付网络。</p></section>
-<section><h2>1. 取得处理同意</h2>
-<p>本演示只使用虚构或已同意的测试内容。若对方拒绝或撤回，停止处理并清除本次会话的风险证据和待核验操作。</p>
-<button id="consent">已明确同意，开始测试</button><button id="decline">拒绝/撤回并清除</button>
-<button id="new-session">结束本场并开始新的独立测试</button>
-<p id="consent-status" role="status">尚未取得本次会话的处理同意。</p></section>
-<section><h2>2. 实时语音或文本备用输入</h2>
-<p>实时语音使用 AssemblyAI。请只朗读虚构测试台词；文本分析支持有限的英文、中文与混合规则。中文实时语音识别尚未验证，转录成功不等于一定触发风险提醒。</p>
-<blockquote lang="en">Move your savings into the secure holding wallet.</blockquote>
-<p>也可测试：“Send 500 dollars using Zelle right now.” 或 “Tell me your verification code.”</p>
-<button id="start-audio">开始麦克风</button><button id="stop-audio" disabled>停止麦克风</button>
-<label>麦克风音量 <meter id="level" min="0" max="1" value="0"></meter></label>
-<p id="audio-status" role="status">麦克风关闭。</p>
-<p><strong>语音服务听到：</strong></p><div id="live-transcript">尚无实时转录。</div>
-<p id="metrics">尚无现场测量数据。</p>
-<button id="refresh-metrics">刷新测量汇总</button>
-<button id="export-metrics">下载测量报告</button>
-<p id="metrics-summary">本次服务启动后尚无完整测试。</p>
-<label for="language">文本语言</label>
-<select id="language"><option value="en">English</option><option value="zh">中文</option><option value="en-zh">中英混说</option></select>
-<label for="transcript">虚构测试台词</label>
-<textarea id="transcript" rows="3">Move your savings into the secure holding wallet.</textarea>
-<button id="ingest">使用文本备用输入</button><p id="risk" role="status">尚未分析</p>
-<p id="policy-explanation">只有检测到可二次确认的高影响操作时，系统才生成挑战码。</p>
-<button id="inspect-evidence">查看风险依据</button><button id="export-receipt">下载签名决策回执</button>
-<p id="evidence-summary">风险依据按当前转录版本汇总；同类证据只计分一次。</p>
-<p>回执记录风险判断，不是操作许可或身份认证；下载文件不含转录原文，但包含会话标识。语音最长录制 60 秒，停止后再申请确认。</p>
-<p>继续提交新内容会使待确认请求失效。可提交 “Do not tell anyone.” 检查保密施压时的拒绝。</p>
-</section>
-<section><h2>3. 申请一次模拟结账付款</h2>
-<label for="claimed-identity">来电声称是哪个已登记联系人？</label>
-<select id="claimed-identity"><option value="">尚未读取联系人</option></select>
-<button id="load-contacts">读取已登记联系人</button>
-<p id="contact-status">登记来自可信启动配置；来电方不能添加或更换联系人的公钥。</p>
-<label for="destination">结账目标（虚构）</label><input id="destination" maxlength="80" value="campus-repair-checkout">
-<label for="amount">金额（美分，280000 = 2,800.00 美元）</label>
-<input id="amount" type="number" min="1" max="100000000" step="1" value="280000">
-<button id="request">联系对应的已登记核验者</button>
-<button id="test-gateway">尝试直接付款（应被拒绝）</button>
-<p id="gateway-result" role="status">直接输入不能获得付款权限；批准仍需走独立核验流程。</p>
-<p id="challenge"></p>
-<p>只有“先核验”状态可提交。保密施压或密码请求需要暂停，这条演示路径不会放行。</p>
-</section>
-<section><h2>4. 查看结果</h2><button id="refresh">刷新结果</button>
-<p id="status" role="status">请使用启动程序给出的请求端链接。</p></section>
-<p>批准同时需要核验端入口和请求端生成的一次性挑战码。请通过演示之外的第二条渠道把挑战码交给核验者。它仍不是真人身份登记。</p>
-</main><script src="/review-ui.js" defer></script></html>
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReachGuard — Request workspace</title><link rel="stylesheet" href="/review-ui.css">
+<body><header class="review-top"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">r</span>ReachGuard</a><span class="badge">Request view · Local demo</span></header>
+<main class="participant-main" data-role="participant"><p class="eyebrow">REACH SOMEONE YOU TRUST. BEFORE YOU ACT.</p><h1>A familiar voice.<br>An unfamiliar request.</h1><p class="muted">Review the evidence before acting on a request to pay. Every action here is simulated.</p>
+<section class="checkout"><h2>The scenario</h2><p>A student receives a voice request from someone claiming to be a friend. The caller asks for an urgent payment. A device event can start an intent to verify; a separately authorized contact reviews the exact simulated action.</p><p class="fineprint">No merchant, banking connection, real payment, or verified human enrollment is part of this demo.</p></section>
+<section><p class="eyebrow">01 / CONSENT</p><h2>Choose what to share</h2><p>Use only fictional content or content you have permission to process. Withdrawing consent clears current evidence and pending verification.</p>
+<button id="consent" class="primary">Allow this test session</button><button id="decline">Withdraw and clear</button><button id="new-session" class="danger">Start a new session</button><p id="consent-status" role="status">Processing is not allowed until you give consent for this session.</p></section>
+<section><p class="eyebrow">02 / UNDERSTAND THE REQUEST</p><h2>Listen, or use test text</h2><p>Optional live transcription uses AssemblyAI when configured locally. Use fictional speech. Transcript availability does not guarantee a risk warning.</p>
+<blockquote>“It's me. Send 80 dollars right now. I really need your help.”</blockquote>
+<button id="start-audio">Start microphone</button><button id="stop-audio" disabled>Stop microphone</button><label>Microphone level <meter id="level" min="0" max="1" value="0"></meter></label><p id="audio-status" role="status">Microphone off. Speech requires local provider configuration.</p>
+<h3>Live transcript</h3><div id="live-transcript">No live transcript yet.</div>
+<label for="language">Test text language</label><select id="language"><option value="en">English</option><option value="zh">Mandarin</option><option value="en-zh">English / Mandarin</option></select>
+<label for="transcript">Fictional request</label><textarea id="transcript" rows="3">Hey, it's me. Send 80 dollars right now. I really need your help.</textarea>
+<button id="ingest" class="primary">Analyze test text</button><p id="risk" role="status">Not analyzed yet</p><p id="policy-explanation">A qualifying high-impact request is needed before a confirmation can be requested.</p>
+<div class="notice amber">New content invalidates an outstanding verification. Finish recording before requesting confirmation. Mandarin live transcription has not been validated.</div>
+<details class="developer"><summary>Evidence &amp; measurement details</summary><button id="inspect-evidence">Inspect evidence</button><button id="export-receipt">Download risk receipt</button><p id="evidence-summary">Evidence is grouped by the current transcript revision. A receipt is not payment permission or identity verification.</p><p id="metrics">No timing samples yet.</p><button id="refresh-metrics">Refresh measurements</button><button id="export-metrics">Download measurements</button><p id="metrics-summary">No completed samples in this service run.</p><p class="fineprint">Receipts exclude transcript text but include session metadata. Recording is limited to 60 seconds.</p></details></section>
+<section><p class="eyebrow">03 / ASK THROUGH A SEPARATE CHANNEL</p><h2>Prepare a simulated action</h2><label for="claimed-identity">Who does the caller claim to be?</label><select id="claimed-identity"><option value="">Load saved contacts first</option></select><button id="load-contacts">Load saved contacts</button><p id="contact-status" class="fineprint">Contact routes come from trusted startup configuration. Caller speech cannot enroll a new signing key.</p>
+<div class="grid-two"><div><label for="destination">Simulated destination</label><input id="destination" maxlength="80" value="fictional-wallet"></div><div><label for="amount">Amount in USD cents</label><input id="amount" type="number" min="1" max="100000000" step="1" value="8000"></div></div>
+<button id="request" class="primary">Request verification</button><div id="challenge" class="notice amber" aria-live="polite"></div><p>Share the one-time code with the contact through a separate, agreed channel. A code alone is not permission to execute an action.</p>
+<details class="developer"><summary>Direct action boundary check</summary><button id="test-gateway">Test direct-action refusal</button><p id="gateway-result">Input alone cannot authorize an action. A separate signed confirmation is required.</p></details></section>
+<section><h2>Check the outcome</h2><button id="refresh">Refresh result</button><p id="status" role="status">Open this request view with its own local access link.</p><p class="fineprint">No real payment is made. A local operator holding both roles can approve a simulation; this is not independently verified human identity.</p></section>
+<details class="developer"><summary>Local access</summary><pre>python -m scripts.open_fusion_page participant</pre><p class="fineprint">This opens only the participant capability. It never grants contact authority.</p></details>
+<footer><span>ReachGuard / CallGate × Reach</span><span>Scoped, simulated actions only</span></footer></main><script src="/review-ui.js" defer></script></body></html>
